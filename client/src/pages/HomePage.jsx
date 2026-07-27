@@ -8,6 +8,8 @@ import TrustBadges from '../components/home/TrustBadges'
 import Footer from '../components/layout/Footer'
 import Navbar from '../components/layout/Navbar'
 import TopBanner from '../components/layout/TopBanner'
+import Banner from '../components/home/Banner'
+import SkincareTipsBar from '../components/home/SkincareTipsBar'
 
 export default function HomePage() {
   return (
@@ -15,6 +17,8 @@ export default function HomePage() {
       <TopBanner />
       <Navbar />
       <HeroSection />
+      <Banner />
+      <SkincareTipsBar />
       <TrustBadges />
       <FeaturedProducts />
       <CategorySection />

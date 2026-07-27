@@ -88,7 +88,24 @@ const startServer = async () => {
       console.log(`Glowsiaa server listening on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
+    if (error.message.includes('authentication failed')) {
+      console.error('--------------------------------------------------');
+      console.error('DATABASE AUTHENTICATION FAILED');
+      console.error('--------------------------------------------------');
+      console.error('This is an issue with the credentials in your .env file.');
+      console.error('Please check the following:');
+      console.error('1. File Location: Make sure you have a .env file in the `server/` directory.');
+      console.error('2. Credentials: In your .env file, verify the MONGO_URI is correct.');
+      console.error('   - Check the username and password.');
+      console.error('   - IMPORTANT: Use the DATABASE USER password, not your MongoDB Atlas account password.');
+      console.error('3. Special Characters: If your password has special characters like @, :, #, or ?, they MUST be URL-encoded.');
+      console.error('   - Example: a password like "my#pass" should be written as "my%23pass".');
+      console.error('4. IP Access: In MongoDB Atlas, go to "Network Access" and ensure your current IP address is whitelisted.');
+      console.error('   - For testing, you can temporarily allow access from anywhere with 0.0.0.0/0, but this is not secure.');
+      console.error('--------------------------------------------------');
+    } else {
+      console.error('Failed to start server:', error.message);
+    }
     process.exit(1);
   }
 };
