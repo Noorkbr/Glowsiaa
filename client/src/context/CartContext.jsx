@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 
 const CartContext = createContext(null)
 
@@ -39,6 +40,11 @@ export function CartProvider({ children }) {
       }
       return [...currentItems, { ...product, quantity }]
     })
+
+    toast.success(
+      `${product?.name ? product.name.split(' ').slice(0, 3).join(' ') : 'Item'} added to cart!`,
+      { icon: '🛍️', duration: 2000, style: { background: '#1a1227', color: '#fff', border: '1px solid rgba(213,16,110,0.3)' } }
+    )
   }
 
   const removeFromCart = (productId) => {

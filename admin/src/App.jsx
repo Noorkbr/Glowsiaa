@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -47,7 +49,20 @@ export default function App() {
   };
 
   return (
-    <Routes>
+    <ThemeProvider>
+    <>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#111827',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+          },
+        }}
+      />
+      <Routes>
       <Route
         path="/login"
         element={
@@ -71,5 +86,7 @@ export default function App() {
 
       <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
     </Routes>
+    </>
+    </ThemeProvider>
   );
 }

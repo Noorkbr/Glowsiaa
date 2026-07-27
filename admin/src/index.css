@@ -2,81 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────
+   CSS Variables
+────────────────────────────────────────────── */
+:root {
+  --bg:       #F5F3FF;
+  --bg-card:  #FFFFFF;
+  --bg-panel: rgba(110,57,146,0.07);
+  --fg:       #0D0B1A;
+  --fg-muted: rgba(13,11,26,0.55);
+  --border:   rgba(0,0,0,0.09);
+  --midnight: #F5F3FF;
+}
+
+html.dark {
+  --bg:       #070B16;
+  --bg-card:  rgba(255,255,255,0.04);
+  --bg-panel: rgba(255,255,255,0.05);
+  --fg:       #FFFFFF;
+  --fg-muted: rgba(255,255,255,0.55);
+  --border:   rgba(255,255,255,0.10);
+  --midnight: #070B16;
+}
+
 @layer base {
-  :root {
-    color-scheme: dark;
-    font-family: Inter, sans-serif;
-    background: #070b16;
-  }
+  :root { color-scheme: dark; }
+  html.light { color-scheme: light; }
 
-  * {
-    @apply border-white/10;
-  }
-
-  html {
-    @apply scroll-smooth;
-  }
+  html { @apply scroll-smooth; }
 
   body {
-    @apply min-h-screen bg-midnight bg-glow-grid text-white antialiased;
+    background-color: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    font-family: Inter, sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    background-image:
+      radial-gradient(circle at top, rgba(213, 16, 110, 0.14), transparent 35%),
+      radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.10), transparent 28%);
   }
 
-  #root {
-    @apply min-h-screen;
+  html.light body {
+    background-image:
+      radial-gradient(circle at top, rgba(213, 16, 110, 0.07), transparent 35%),
+      radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.06), transparent 28%);
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: 'Space Grotesk', sans-serif;
-  }
+  #root { @apply min-h-screen; }
 
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-  }
+  h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', sans-serif; }
+  button, input, select, textarea { font: inherit; }
 
-  ::selection {
-    @apply bg-glow-magenta/40 text-white;
-  }
+  ::selection { @apply bg-glow-magenta/40 text-white; }
 
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-white/5;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-white/15;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-white/25;
-  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { @apply bg-white/5; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-white/15; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-white/25; }
 }
 
 @layer components {
   .panel {
     @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl;
+    box-shadow: var(--shadow-panel, none);
   }
 
   .input {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-glow-magenta focus:ring-2 focus:ring-glow-magenta/20;
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none transition focus:border-glow-magenta focus:ring-2 focus:ring-glow-magenta/20;
+    color: var(--fg);
+    placeholder-color: rgba(156,163,175,1);
   }
 
+  .input::placeholder { color: rgba(156,163,175,1); }
+
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-glow-magenta to-glow-purple px-4 py-3 text-sm font-semibold text-white shadow-glow transition hover:scale-[1.01] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-glow-magenta to-glow-purple px-4 py-3 text-sm font-semibold shadow-glow transition hover:scale-[1.02] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60;
+    color: #FFFFFF !important;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/10;
+    @apply inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium transition hover:border-white/20 hover:bg-white/10;
+    color: var(--fg);
   }
 }
+
+/* ──────────────────────────────────────────────
+   LIGHT MODE OVERRIDES
+────────────────────────────────────────────── */
+html.light .panel {
+  background-color: #FFFFFF !important;
+  border-color: rgba(0,0,0,0.09) !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.07);
+  backdrop-filter: none;
+}
+
+html.light .input {
+  background-color: #FFFFFF !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: #0D0B1A !important;
+}
+html.light .input::placeholder { color: rgba(13,11,26,0.38) !important; }
+
+html.light .btn-secondary {
+  border-color: rgba(0,0,0,0.12) !important;
+  background-color: rgba(0,0,0,0.04) !important;
+  color: #0D0B1A !important;
+}
+html.light .btn-secondary:hover {
+  background-color: rgba(0,0,0,0.07) !important;
+}
+
+html.light .bg-midnight { background-color: var(--bg) !important; }
+html.light body { background-color: var(--bg); }
+
+html.light .text-white  { color: #0D0B1A !important; }
+html.light .text-white\/80 { color: rgba(13,11,26,0.80) !important; }
+html.light .text-white\/70 { color: rgba(13,11,26,0.70) !important; }
+html.light .text-white\/65 { color: rgba(13,11,26,0.65) !important; }
+html.light .text-white\/60 { color: rgba(13,11,26,0.60) !important; }
+html.light .text-white\/55 { color: rgba(13,11,26,0.55) !important; }
+html.light .text-white\/50 { color: rgba(13,11,26,0.50) !important; }
+html.light .text-white\/45 { color: rgba(13,11,26,0.45) !important; }
+html.light .text-white\/40 { color: rgba(13,11,26,0.40) !important; }
+
+html.light .btn-primary .text-white,
+html.light .btn-primary,
+html.light .bg-glow-magenta.text-white,
+html.light .bg-glow-purple.text-white { color: #FFFFFF !important; }
+
+html.light .text-gray-400 { color: rgba(13,11,26,0.50) !important; }
+html.light .text-gray-300 { color: rgba(13,11,26,0.65) !important; }
+html.light .text-gray-200 { color: rgba(13,11,26,0.75) !important; }
+html.light .text-gray-500 { color: rgba(13,11,26,0.45) !important; }
+
+html.light .border-white\/10 { border-color: rgba(0,0,0,0.09) !important; }
+html.light .border-white\/5  { border-color: rgba(0,0,0,0.06) !important; }
+html.light .bg-white\/5  { background-color: rgba(0,0,0,0.04) !important; }
+html.light .bg-white\/10 { background-color: rgba(0,0,0,0.07) !important; }
+html.light .bg-\[\#111827\] { background-color: #FFFFFF !important; }
+html.light .bg-\[\#14141f\] { background-color: #F0EBF8 !important; }
+
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light select,
+html.light textarea {
+  background-color: #FFFFFF !important;
+  color: #0D0B1A !important;
+  border-color: rgba(0,0,0,0.12) !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: rgba(13,11,26,0.38) !important; }

@@ -1,43 +1,41 @@
-import { motion, useInView } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Lock, RotateCcw, ShieldCheck, Truck } from 'lucide-react'
-import { useRef } from 'react'
 
 const badges = [
-  { icon: ShieldCheck, title: 'Authentic Products' },
-  { icon: Truck, title: 'Fast Delivery' },
-  { icon: RotateCcw, title: 'Easy Returns' },
-  { icon: Lock, title: 'Secure Payment' }
+  { icon: ShieldCheck, title: '100% Authentic', sub: 'Verified products only', color: 'text-emerald-400' },
+  { icon: Truck,       title: 'Fast Delivery',  sub: 'Dhaka 1–2 days',         color: 'text-blue-400' },
+  { icon: RotateCcw,  title: 'Easy Returns',   sub: '7-day return policy',     color: 'text-purple-400' },
+  { icon: Lock,        title: 'Secure Payment', sub: 'bKash, Nagad, COD',      color: 'text-glow-magenta' },
 ]
 
 export default function TrustBadges() {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
-
   return (
-    <section className="px-4 py-8 sm:px-6 lg:px-8">
-      <motion.div
-        ref={ref}
-        className="mx-auto grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4"
-        initial="hidden"
-        animate={inView ? 'visible' : 'hidden'}
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.12 } }
-        }}
-      >
-        {badges.map(({ icon: Icon, title }) => (
+    <section className="px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {badges.map(({ icon: Icon, title, sub, color }, i) => (
           <motion.div
             key={title}
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-            className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-5"
+            initial={{ opacity: 0, y: 24, scale: 0.94 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.45, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{ y: -4, scale: 1.02 }}
+            className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-5 transition-shadow hover:shadow-[0_8px_32px_rgba(213,16,110,0.12)]"
           >
-            <div className="rounded-full bg-glow-magenta/15 p-3 text-glow-magenta">
+            <motion.div
+              className={`rounded-2xl bg-white/10 p-3 ${color}`}
+              whileHover={{ rotate: [0, -8, 8, 0] }}
+              transition={{ duration: 0.4 }}
+            >
               <Icon size={22} />
+            </motion.div>
+            <div>
+              <p className="font-semibold text-white">{title}</p>
+              <p className="text-xs text-white/50">{sub}</p>
             </div>
-            <span className="font-medium text-white/90">{title}</span>
           </motion.div>
         ))}
-      </motion.div>
+      </div>
     </section>
   )
 }

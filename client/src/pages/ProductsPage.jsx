@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
 import CartDrawer from '../components/cart/CartDrawer'
 import CheckoutDrawer from '../components/checkout/CheckoutDrawer'
@@ -8,12 +9,17 @@ import Navbar from '../components/layout/Navbar'
 import ProductCard from '../components/product/ProductCard'
 
 const fallbackCategories = ['All', 'Skincare', 'Makeup', 'Fragrance', 'Haircare']
+const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str
 
 export default function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const cat = searchParams.get('category')
+    return cat ? capitalize(cat) : 'All'
+  })
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [sortBy, setSortBy] = useState('featured')
 
   useEffect(() => {
@@ -22,9 +28,8 @@ export default function ProductsPage() {
         setLoading(true)
         const { data } = await api.get('/products', {
           params: {
-            category: selectedCategory !== 'All' ? selectedCategory : undefined,
+            category: selectedCategory !== 'All' ? selectedCategory.toLowerCase() : undefined,
             search: searchQuery || undefined,
-            sortBy: sortBy !== 'featured' ? sortBy : undefined
           }
         })
         const list = Array.isArray(data) ? data : data?.products ?? data?.data ?? []
@@ -35,16 +40,20 @@ export default function ProductsPage() {
         setLoading(false)
       }
     }
-
     fetchProducts()
-  }, [searchQuery, selectedCategory, sortBy])
+  }, [searchQuery, selectedCategory])
+
+  useEffect(() => {
+    const params = {}
+    if (selectedCategory !== 'All') params.category = selectedCategory.toLowerCase()
+    if (searchQuery) params.search = searchQuery
+    setSearchParams(params, { replace: true })
+  }, [selectedCategory, searchQuery, setSearchParams])
 
   const categories = useMemo(() => {
-    const dynamic = products
-      .map((product) => product?.category)
-      .filter(Boolean)
-      .reduce((unique, category) => (unique.includes(category) ? unique : [...unique, category]), [])
-
+    const dynamic = [...new Set(
+      products.map((p) => p?.category).filter(Boolean).map(capitalize)
+    )]
     return ['All', ...new Set([...fallbackCategories.slice(1), ...dynamic])]
   }, [products])
 
@@ -52,7 +61,9 @@ export default function ProductsPage() {
     let nextProducts = [...products]
 
     if (selectedCategory !== 'All') {
-      nextProducts = nextProducts.filter((product) => product?.category === selectedCategory)
+      nextProducts = nextProducts.filter((product) =>
+        (product?.category ?? '').toLowerCase() === selectedCategory.toLowerCase()
+      )
     }
 
     if (searchQuery.trim()) {
@@ -103,7 +114,7 @@ export default function ProductsPage() {
                     key={category}
                     type="button"
                     onClick={() => setSelectedCategory(category)}
-                    className={`rounded-full px-4 py-3 text-sm font-medium transition lg:text-left ${
+                    className={`whitespace-nowrap rounded-full px-4 py-3 text-sm font-medium transition lg:text-left ${
                       selectedCategory === category
                         ? 'bg-glow-magenta text-white'
                         : 'border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/5 hover:text-white'
@@ -132,8 +143,17 @@ export default function ProductsPage() {
 
           <section>
             {loading ? (
-              <div className="flex items-center justify-center py-24">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-glow-magenta" />
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse rounded-2xl border border-white/10 bg-white/5">
+                    <div className="h-72 rounded-t-2xl bg-white/10" />
+                    <div className="space-y-3 p-5">
+                      <div className="h-5 rounded-full bg-white/10" />
+                      <div className="h-4 w-2/3 rounded-full bg-white/10" />
+                      <div className="h-10 rounded-xl bg-white/10" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : displayedProducts.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-16 text-center text-white/65">

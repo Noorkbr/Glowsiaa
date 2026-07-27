@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { PackagePlus, Pencil, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 const categories = [
@@ -122,9 +123,11 @@ export default function ProductsPage() {
       if (editingProduct) {
         const { data } = await api.put(`/products/${editingProduct._id}`, payload);
         setProducts((prev) => prev.map((product) => (product._id === editingProduct._id ? data.product : product)));
+        toast.success('Product updated successfully!');
       } else {
         const { data } = await api.post('/products', payload);
         setProducts((prev) => [data.product, ...prev]);
+        toast.success('Product created successfully!');
       }
 
       closeModal();
@@ -148,6 +151,7 @@ export default function ProductsPage() {
       await api.delete(`/products/${deleteConfirm._id}`);
       setProducts((prev) => prev.filter((product) => product._id !== deleteConfirm._id));
       setDeleteConfirm(null);
+      toast.success('Product deleted.');
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to delete product.');
     } finally {

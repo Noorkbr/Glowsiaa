@@ -9,6 +9,7 @@ const { createRateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
 const deliveryCompanies = ['pathao', 'steadfast', 'redx'];
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const adminRateLimit = createRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 120,
@@ -47,7 +48,15 @@ router.get('/stats', adminRateLimit, async (req, res, next) => {
       recentOrders,
     };
 
-    res.json({ success: true, stats });
+    const ordersByStatus = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+    const statusMap = ordersByStatus.reduce((acc, item) => {
+      acc[item._id] = item.count;
+      return acc;
+    }, {});
+
+    res.json({ success: true, stats: { ...stats, ordersByStatus: statusMap } });
   } catch (error) {
     next(error);
   }
@@ -93,6 +102,30 @@ router.get('/orders', adminRateLimit, async (req, res, next) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 }).populate('items.product');
     res.json({ success: true, orders });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/users', adminRateLimit, async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+    const skip = (page - 1) * limit;
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+
+    let filter = { role: 'user' };
+    if (search) {
+      const safeSearch = new RegExp(escapeRegex(search), 'i');
+      filter = { role: 'user', $or: [{ name: safeSearch }, { email: safeSearch }, { phone: safeSearch }] };
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+      User.countDocuments(filter),
+    ]);
+
+    res.json({ success: true, users, total, page, limit });
   } catch (error) {
     next(error);
   }

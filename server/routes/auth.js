@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const { body, matchedData, validationResult } = require('express-validator');
 
 const User = require('../models/User');
+const Order = require('../models/Order');
 const { protect } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
 
@@ -103,6 +104,43 @@ router.post('/login', authRateLimit, async (req, res, next) => {
 
 router.get('/me', authRateLimit, protect, async (req, res) => {
   res.json({ success: true, user: req.user });
+});
+
+router.get('/orders', authRateLimit, protect, async (req, res, next) => {
+  try {
+    const orders = await Order.find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .select('orderId customer items subtotal deliveryFee total paymentMethod status trackingNumber trackingCompany notes createdAt');
+    res.json({ success: true, orders });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/change-password', authRateLimit, protect, async (req, res, next) => {
+  try {
+    const currentPassword = typeof req.body.currentPassword === 'string' ? req.body.currentPassword : '';
+    const newPassword = typeof req.body.newPassword === 'string' ? req.body.newPassword : '';
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Both current and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user || !(await user.matchPassword(currentPassword))) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

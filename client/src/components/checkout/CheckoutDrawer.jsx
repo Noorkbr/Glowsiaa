@@ -17,7 +17,7 @@ const initialFormData = {
   name: '',
   phone: '',
   address: '',
-  location: 'Inside Dhaka (৳60)',
+  location: 'inside_dhaka',
   paymentMethod: 'cod'
 }
 
@@ -49,7 +49,7 @@ export default function CheckoutDrawer() {
   }, [isCheckoutOpen])
 
   const deliveryFee = useMemo(
-    () => (formData.location === 'Outside Dhaka (৳120)' ? 120 : 60),
+    () => (formData.location === 'outside_dhaka' ? 120 : 60),
     [formData.location]
   )
 
@@ -97,11 +97,11 @@ export default function CheckoutDrawer() {
           quantity: item?.quantity,
           image: getImageUrl(item?.images?.[0] ?? item?.image)
         })),
-        paymentMethod: 'cod'
+        paymentMethod: formData.paymentMethod
       }
 
       const { data } = await api.post('/orders', payload)
-      const orderId = data?.order?._id ?? data?._id ?? data?.orderId ?? 'Pending Confirmation'
+      const orderId = data?.order?.orderId ?? data?.orderId ?? data?.order?._id ?? 'Pending'
       setPlacedOrderId(orderId)
       setOrderSuccess(true)
       clearCart()
@@ -172,8 +172,8 @@ export default function CheckoutDrawer() {
                   <label className="block space-y-2">
                     <span className="text-sm font-medium text-white/85">Location</span>
                     <select name="location" value={formData.location} onChange={handleChange} className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-glow-magenta">
-                      <option className="bg-midnight">Inside Dhaka (৳60)</option>
-                      <option className="bg-midnight">Outside Dhaka (৳120)</option>
+                      <option value="inside_dhaka" className="bg-midnight">Inside Dhaka (৳60)</option>
+                      <option value="outside_dhaka" className="bg-midnight">Outside Dhaka (৳120)</option>
                     </select>
                   </label>
                   {error && <p className="text-sm text-red-400">{error}</p>}
@@ -207,9 +207,9 @@ export default function CheckoutDrawer() {
                   <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
                     <h3 className="font-heading text-xl font-semibold text-white">Payment Method</h3>
                     <div className="mt-4 space-y-3">
-                      <label className="flex items-center justify-between rounded-2xl border border-glow-magenta/40 bg-glow-magenta/10 px-4 py-4 text-white">
+                      <label className={`flex items-center justify-between rounded-2xl border px-4 py-4 text-white cursor-pointer ${formData.paymentMethod === 'cod' ? 'border-glow-magenta/40 bg-glow-magenta/10' : 'border-white/10 bg-white/[0.03]'}`}>
                         <span>Cash on Delivery (COD)</span>
-                        <input type="radio" name="paymentMethod" checked readOnly className="accent-glow-magenta" />
+                        <input type="radio" name="paymentMethod" value="cod" checked={formData.paymentMethod === 'cod'} onChange={handleChange} className="accent-glow-magenta" />
                       </label>
                       <label className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-white/40">
                         <span>bKash</span>

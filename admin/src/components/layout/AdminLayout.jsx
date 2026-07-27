@@ -1,13 +1,16 @@
 import {
   LayoutDashboard,
   LogOut,
+  Moon,
   Package,
   Settings,
   ShoppingCart,
   Sparkles,
+  Sun,
   Users,
 } from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -28,6 +31,7 @@ const pageTitles = {
 export default function AdminLayout({ onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
   const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
   const currentTitle = pageTitles[location.pathname] || 'Admin Panel';
 
@@ -96,6 +100,14 @@ export default function AdminLayout({ onLogout }) {
           </div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-lg p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white"
+              aria-label="Toggle theme"
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
             <div className="text-right">
               <p className="text-sm font-semibold text-white">Admin</p>
               <p className="text-xs text-gray-400">{adminUser?.email || 'admin@glowsiaa.com'}</p>

@@ -5,25 +5,27 @@ const footerColumns = [
   {
     title: 'About',
     links: [
-      { label: 'Our Story', to: '/' },
-      { label: 'Authenticity Promise', to: '/' },
-      { label: 'Why Glowsiaa', to: '/' }
+      { label: 'Our Story', to: '/#our-story' },
+      { label: 'Authenticity Promise', to: '/#our-story' },
+      { label: 'Why Glowsiaa', to: '/#our-story' }
     ]
   },
   {
     title: 'Shop',
     links: [
       { label: 'All Products', to: '/products' },
-      { label: 'Skincare', to: '/products?category=Skincare' },
-      { label: 'Makeup', to: '/products?category=Makeup' }
+      { label: 'Skincare', to: '/products?category=skincare' },
+      { label: 'Makeup', to: '/products?category=makeup' },
+      { label: 'Fragrance', to: '/products?category=fragrance' },
+      { label: 'Haircare', to: '/products?category=haircare' }
     ]
   },
   {
     title: 'Help',
     links: [
-      { label: 'Contact Us', to: '/login' },
-      { label: 'Returns Policy', to: '/products' },
-      { label: 'Order Tracking', to: '/orders/sample-order' }
+      { label: 'Track Your Order', to: '/orders' },
+      { label: 'My Account', to: '/account' },
+      { label: 'Contact Us', to: '/login' }
     ]
   }
 ]

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Truck, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 const statusOptions = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -64,12 +65,13 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId, status) => {
     setSavingStatusId(orderId);
-
     try {
       const { data } = await api.put(`/orders/${orderId}/status`, { status });
       setOrders((prev) => prev.map((order) => (order._id === orderId ? data.order : order)));
+      toast.success(`Order status updated to ${status}`);
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to update order status.');
+      toast.error('Failed to update order status');
     } finally {
       setSavingStatusId('');
     }
@@ -107,8 +109,10 @@ export default function OrdersPage() {
       setTrackingNumber(data.trackingNumber);
       setOrders((prev) => prev.map((order) => (order._id === selectedOrder._id ? data.order : order)));
       setSelectedOrder(data.order);
+      toast.success(`Order pushed to ${selectedCompany.toUpperCase()}! Tracking: ${data.trackingNumber}`);
     } catch (requestError) {
       setDeliveryError(requestError.response?.data?.message || 'Failed to push order to delivery.');
+      toast.error('Failed to push to delivery');
     } finally {
       setDeliveryLoading(false);
     }

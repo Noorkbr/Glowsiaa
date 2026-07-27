@@ -1,5 +1,6 @@
 import { Save, ShieldCheck, Store } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import api from '../api/axios';
 
 const defaultStoreSettings = {
   storeName: 'Glowsiaa',
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const [passwordMessage, setPasswordMessage] = useState('');
   const [settingsMessage, setSettingsMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   const handlePasswordChange = (event) => {
     const { name, value } = event.target;
@@ -33,7 +35,7 @@ export default function SettingsPage() {
     setStoreSettings((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const submitPasswordChange = (event) => {
+  const submitPasswordChange = async (event) => {
     event.preventDefault();
     setPasswordMessage('');
     setPasswordError('');
@@ -42,16 +44,24 @@ export default function SettingsPage() {
       setPasswordError('New password must be at least 6 characters long.');
       return;
     }
-
     if (passwordForm.currentPassword === passwordForm.newPassword) {
       setPasswordError('Choose a new password that is different from the current one.');
       return;
     }
 
-    setPasswordMessage(
-      'Password form submitted successfully. This page currently confirms the change locally because the API does not expose an admin password update route.'
-    );
-    setPasswordForm({ currentPassword: '', newPassword: '' });
+    setPasswordLoading(true);
+    try {
+      await api.put('/auth/change-password', {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordMessage('Password updated successfully! ✅');
+      setPasswordForm({ currentPassword: '', newPassword: '' });
+    } catch (requestError) {
+      setPasswordError(requestError.response?.data?.message || 'Failed to update password. Please try again.');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const saveStoreSettings = (event) => {
@@ -122,9 +132,9 @@ export default function SettingsPage() {
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{passwordMessage}</div>
             ) : null}
 
-            <button type="submit" className="btn-primary gap-2">
+            <button type="submit" disabled={passwordLoading} className="btn-primary gap-2 disabled:opacity-60">
               <Save className="h-4 w-4" />
-              Update Password
+              {passwordLoading ? 'Updating…' : 'Update Password'}
             </button>
           </form>
         </div>

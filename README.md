@@ -1,143 +1,129 @@
-# Glowsiaa 💄✨
+# Glowsiaa — Premium Beauty E-Commerce Platform
 
-Bangladesh's premium cosmetics e-commerce platform — a full-stack monorepo with a storefront, admin panel, and REST API.
+Bangladesh's #1 premium cosmetics store. Full-stack MERN application with a customer storefront, admin dashboard, and REST API.
+
+---
 
 ## Tech Stack
 
 | Layer | Technologies |
 |---|---|
-| Frontend | React 18, Vite, Tailwind CSS v3, Framer Motion, Lucide React, React Router v6, Axios |
-| Admin | React 18, Vite, Tailwind CSS v3, Recharts, Framer Motion, Lucide React |
-| Backend | Node.js, Express.js, Mongoose, JWT, bcryptjs, express-validator |
-| Database | MongoDB (Atlas) |
+| **Frontend** | React 18, Vite, Tailwind CSS, Framer Motion, Lucide React, react-hot-toast |
+| **Admin** | React 18, Vite, Tailwind CSS, Recharts |
+| **Backend** | Node.js, Express.js, Mongoose |
+| **Database** | MongoDB Atlas |
+| **Auth** | JWT (7-day tokens), bcryptjs |
 
-## Quick Start
-
-### Prerequisites
-- Node.js 18+
-- MongoDB Atlas account (or local MongoDB)
-
-### 1. Clone & Install
-
-```bash
-git clone https://github.com/Noorkbr/Glowsiaa.git
-cd Glowsiaa
-cd server && npm install
-cd ../client && npm install
-cd ../admin && npm install
-cd ..
-```
-
-### 2. Configure Environment
-
-```bash
-cp server/.env.example server/.env
-# Edit server/.env with your MongoDB URI and JWT secret
-```
-
-### 3. Seed Database
-
-```bash
-cd server && npm run seed
-```
-
-**Admin credentials after seeding:**
-- Email: `admin@glowsiaa.com`
-- Password: `admin123`
-
-### 4. Run Development
-
-Open three terminal windows:
-
-```bash
-# Terminal 1 - Backend API
-cd server && npm run dev
-
-# Terminal 2 - Customer Storefront
-cd client && npm run dev
-
-# Terminal 3 - Admin Panel
-cd admin && npm run dev
-```
-
-| Service | URL |
-|---|---|
-| Customer Storefront | http://localhost:5173 |
-| Admin Panel | http://localhost:5174 |
-| REST API | http://localhost:5000 |
+---
 
 ## Project Structure
 
 ```
-glowsiaa/
-├── client/          # Customer-facing storefront (React + Vite)
-│   └── src/
-│       ├── api/         # Axios instance
-│       ├── components/  # UI components (Navbar, Hero, Cart, etc.)
-│       ├── context/     # CartContext, AuthContext
-│       └── pages/       # Route pages
-├── admin/           # Admin dashboard (React + Vite + Recharts)
-│   └── src/
-│       ├── api/         # Axios instance (adminToken)
-│       ├── components/  # AdminLayout, etc.
-│       └── pages/       # Dashboard, Orders, Products
-├── server/          # REST API (Express + MongoDB)
-│   ├── models/      # User, Product, Order
-│   ├── routes/      # auth, products, orders, admin
-│   ├── middleware/  # JWT auth, adminOnly
-│   ├── server.js    # Entry point
-│   └── seed.js      # Database seeder
-└── package.json     # Monorepo root
+Glowsiaa/
+├── server/       # Express API (port 5000)
+├── client/       # Customer storefront (port 5173)
+└── admin/        # Admin panel (port 5174)
 ```
+
+---
+
+## Quick Start
+
+### 1. Server Setup
+
+```bash
+cd server
+npm install
+cp .env.example .env   # Fill in your values
+npm run dev
+```
+
+**`.env` variables:**
+```
+PORT=5000
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/glowsiaa
+JWT_SECRET=your-super-secret-key
+NODE_ENV=development
+```
+
+**Seed the database** (creates admin + 8 products + 5 sample orders):
+```bash
+npm run seed
+```
+
+Default admin credentials after seeding:
+- Email: `admin@glowsiaa.com`
+- Password: `admin123`
+
+### 2. Client (Customer Store)
+
+```bash
+cd client
+npm install
+npm run dev     # http://localhost:5173
+```
+
+### 3. Admin Panel
+
+```bash
+cd admin
+npm install
+npm run dev     # http://localhost:5174
+```
+
+---
+
+## Features
+
+### Customer Store
+- 🛍️ **Product Catalog** — Browse, filter by category, search with live results
+- ❤️ **Wishlist** — Save favourites, persisted in localStorage
+- 🛒 **Cart** — Persistent cart with quantity management
+- 📦 **Checkout** — 2-step checkout with address & payment
+- 🚚 **Order Tracking** — Real-time order status with GLS-XXXXXX ID
+- 👤 **Account Page** — View order history (requires login)
+- 🔐 **Auth** — Register & Login with JWT
+
+### Admin Panel
+- 📊 **Dashboard** — Revenue chart, order stats, recent orders
+- 📦 **Orders** — Manage statuses, push to Pathao / Steadfast / RedX
+- 🛍️ **Products** — Full CRUD with image URLs, featured toggle
+- 👥 **Users** — Searchable customer list with pagination
+- ⚙️ **Settings** — Change password via API, store preferences
+
+---
 
 ## API Endpoints
 
-### Auth
-| Method | Endpoint | Description |
+| Method | Route | Description |
 |---|---|---|
-| POST | /api/auth/register | Register user |
-| POST | /api/auth/login | Login |
-| GET | /api/auth/me | Get current user |
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login |
+| GET | `/api/auth/me` | Get current user |
+| GET | `/api/auth/orders` | User's own orders |
+| PUT | `/api/auth/change-password` | Change password |
+| GET | `/api/products` | List products (filter, search) |
+| GET | `/api/products/:id` | Get single product |
+| POST | `/api/products` | Create product (admin) |
+| PUT | `/api/products/:id` | Update product (admin) |
+| DELETE | `/api/products/:id` | Delete product (admin) |
+| POST | `/api/orders` | Place an order |
+| GET | `/api/orders/:orderId` | Track order by ID |
+| GET | `/api/admin/stats` | Dashboard stats |
+| GET | `/api/admin/revenue` | 30-day revenue data |
+| GET | `/api/admin/orders` | All orders |
+| GET | `/api/admin/users` | All users (searchable, paginated) |
+| POST | `/api/admin/push-delivery` | Push order to courier |
 
-### Products
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /api/products | List all products |
-| GET | /api/products/:id | Get single product |
-| POST | /api/products | Create product (admin) |
-| PUT | /api/products/:id | Update product (admin) |
-| DELETE | /api/products/:id | Delete product (admin) |
+---
 
-### Orders
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | /api/orders | Create order |
-| GET | /api/orders | List all orders (admin) |
-| GET | /api/orders/:orderId | Track order by ID |
-| PUT | /api/orders/:id/status | Update order status (admin) |
+## Deployment Notes
 
-### Admin
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /api/admin/stats | Dashboard statistics |
-| GET | /api/admin/revenue | Revenue chart data |
-| GET | /api/admin/orders | All orders |
-| POST | /api/admin/push-delivery | Push to delivery company |
+- Set `NODE_ENV=production` on your server
+- Set CORS origin to your frontend domain in `server.js`
+- Build client: `cd client && npm run build` → serve `dist/`
+- Build admin: `cd admin && npm run build` → serve `dist/` on a subdomain
 
-## Design System
+---
 
-**Colors:**
-- `glow-magenta` `#D5106E` — Primary CTAs, active states
-- `glow-purple` `#6E3992` — Secondary accents, gradients
-- `midnight` `#0B0B12` — Main background
-
-**Fonts:** Space Grotesk (headings), Inter (body)
-
-**Effects:**
-- Glassmorphism navbar: `bg-midnight/50 backdrop-blur-lg`
-- Neon glow buttons: `boxShadow: 0 0 20px rgba(213,16,110,0.5)`
-- Framer Motion spring animations throughout
-
-## License
-
-MIT
+© 2026 Glowsiaa. All rights reserved.
