@@ -1,14 +1,29 @@
-import { Droplets, Heart, Sparkles, Wind } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Droplets, Heart, Sparkles, Wind, Layers } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import api from '../../api/axios'
 
-const categories = [
-  { name: 'Skincare', value: 'skincare', count: 48, icon: Sparkles, gradient: 'from-[#6E3992] to-[#D5106E]' },
-  { name: 'Makeup', value: 'makeup', count: 62, icon: Heart, gradient: 'from-[#ff4d8d] to-[#f04444]' },
-  { name: 'Fragrance', value: 'fragrance', count: 21, icon: Droplets, gradient: 'from-[#3d7cff] to-[#6E3992]' },
-  { name: 'Haircare', value: 'haircare', count: 34, icon: Wind, gradient: 'from-[#00b894] to-[#00cec9]' }
+// Fallback categories used until DB responds
+const FALLBACK = [
+  { name: 'Skincare', slug: 'skincare', emoji: '✨', gradient: 'from-[#6E3992] to-[#D5106E]', productCount: null },
+  { name: 'Makeup',   slug: 'makeup',   emoji: '💄', gradient: 'from-[#ff4d8d] to-[#f04444]', productCount: null },
+  { name: 'Fragrance',slug: 'fragrance',emoji: '💧', gradient: 'from-[#3d7cff] to-[#6E3992]', productCount: null },
+  { name: 'Haircare', slug: 'haircare', emoji: '🌿', gradient: 'from-[#00b894] to-[#00cec9]', productCount: null },
 ]
 
 export default function CategorySection() {
+  const [categories, setCategories] = useState(FALLBACK)
+  const [expandedCat, setExpandedCat] = useState(null)
+
+  useEffect(() => {
+    api.get('/categories')
+      .then(({ data }) => {
+        if (data.categories?.length > 0) setCategories(data.categories)
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -21,19 +36,60 @@ export default function CategorySection() {
             View All →
           </Link>
         </div>
+
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-          {categories.map(({ name, value, count, icon: Icon, gradient }) => (
-            <Link
-              key={name}
-              to={`/products?category=${value}`}
-              className={`group block rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-6 transition duration-300 hover:-translate-y-2 hover:shadow-[0_22px_60px_rgba(213,16,110,0.24)]`}
+          {categories.map((cat, i) => (
+            <motion.div
+              key={cat._id || cat.slug}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="group"
             >
-              <div className="inline-flex rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
-                <Icon size={26} />
-              </div>
-              <h3 className="mt-6 font-heading text-2xl font-semibold text-white">{name}</h3>
-              <p className="mt-2 text-sm text-white/80">{count} Products</p>
-            </Link>
+              <Link
+                to={`/products?category=${cat.slug}`}
+                className={`block rounded-2xl border border-white/10 bg-gradient-to-br ${cat.gradient} p-6 transition duration-300 hover:-translate-y-2 hover:shadow-[0_22px_60px_rgba(213,16,110,0.24)]`}
+              >
+                {cat.imageUrl ? (
+                  <div className="mb-4 h-16 w-16 overflow-hidden rounded-2xl">
+                    <img src={cat.imageUrl} alt={cat.name} className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="inline-flex rounded-2xl bg-white/15 p-4 text-3xl backdrop-blur-sm">
+                    {cat.emoji || '✨'}
+                  </div>
+                )}
+                <h3 className="mt-4 font-heading text-2xl font-semibold text-white">{cat.name}</h3>
+                {cat.description && (
+                  <p className="mt-1 text-sm text-white/70 line-clamp-1">{cat.description}</p>
+                )}
+                <p className="mt-2 text-sm text-white/80">
+                  {cat.productCount !== null && cat.productCount !== undefined ? `${cat.productCount} Products` : 'Shop Now'}
+                </p>
+              </Link>
+
+              {/* Subcategories */}
+              {cat.subcategories?.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5 px-1">
+                  {cat.subcategories.slice(0, 4).map(sub => (
+                    <Link
+                      key={sub._id || sub.slug}
+                      to={`/products?category=${cat.slug}&subCategory=${sub.slug}`}
+                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/70 transition hover:border-glow-magenta/40 hover:bg-glow-magenta/10 hover:text-white"
+                    >
+                      {sub.emoji && <span className="mr-1">{sub.emoji}</span>}
+                      {sub.name}
+                    </Link>
+                  ))}
+                  {cat.subcategories.length > 4 && (
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/40">
+                      +{cat.subcategories.length - 4} more
+                    </span>
+                  )}
+                </div>
+              )}
+            </motion.div>
           ))}
         </div>
       </div>

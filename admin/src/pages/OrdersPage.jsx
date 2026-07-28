@@ -147,8 +147,8 @@ export default function OrdersPage() {
       {error ? <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">{error}</div> : null}
 
       <div className="panel overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm text-gray-200">
+        <div className="overflow-x-auto -mx-0">
+          <table className="min-w-full text-left text-sm text-gray-200" style={{ minWidth: '700px' }}>
             <thead className="bg-white/5 text-gray-400">
               <tr>
                 <th className="px-4 py-4 font-medium">Order ID</th>

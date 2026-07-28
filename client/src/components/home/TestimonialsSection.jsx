@@ -46,7 +46,7 @@ export default function TestimonialsSection() {
           <div className="mx-auto mt-4 h-1 w-16 rounded-full bg-gradient-to-r from-glow-magenta to-glow-purple" />
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((t, i) => (
             <motion.div
               key={t.name}

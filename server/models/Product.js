@@ -22,8 +22,15 @@ const productSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['skincare', 'makeup', 'fragrance', 'haircare'],
     required: [true, 'Product category is required'],
+    trim: true,
+    lowercase: true,
+  },
+  subCategory: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: '',
   },
   stock: {
     type: Number,

@@ -9,6 +9,14 @@ import OrdersPage from './pages/OrdersPage';
 import ProductsPage from './pages/ProductsPage';
 import SettingsPage from './pages/SettingsPage';
 import UsersPage from './pages/UsersPage';
+import BannersPage from './pages/BannersPage';
+import ContentPage from './pages/ContentPage';
+import CouponsPage from './pages/CouponsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import DeliveryPage from './pages/DeliveryPage';
+import PaymentsPage from './pages/PaymentsPage';
+import CategoriesPage from './pages/CategoriesPage';
+import MediaPage from './pages/MediaPage';
 
 function ProtectedRoute({ isAuthenticated, authReady }) {
   if (!authReady) {
@@ -79,6 +87,14 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/banners" element={<BannersPage />} />
+          <Route path="/content" element={<ContentPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/media" element={<MediaPage />} />
+          <Route path="/coupons" element={<CouponsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/delivery" element={<DeliveryPage />} />
+          <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

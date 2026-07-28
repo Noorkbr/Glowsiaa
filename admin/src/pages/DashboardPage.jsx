@@ -104,7 +104,7 @@ export default function DashboardPage() {
         initial="hidden"
         animate="show"
         variants={{ show: { transition: { staggerChildren: 0.1 } } }}
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-4 grid-cols-2 xl:grid-cols-4"
       >
         {statCards.map(({ label, value, icon: Icon, note }) => (
           <motion.div key={label} variants={statVariants} className="panel p-6">

@@ -78,8 +78,8 @@ export default function UsersPage() {
       </div>
 
       <div className="panel overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm text-gray-200">
+        <div className="overflow-x-auto" style={{ minWidth: 0 }}>
+          <table className="min-w-full text-left text-sm text-gray-200" style={{ minWidth: '560px' }}>
             <thead className="bg-white/5 text-gray-400">
               <tr>
                 <th className="px-4 py-4 font-medium">#</th>

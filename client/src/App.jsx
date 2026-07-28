@@ -3,12 +3,17 @@ import { Toaster } from 'react-hot-toast'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { WishlistProvider } from './context/WishlistContext'
+import CustomCursor from './components/ui/CustomCursor'
+import LoadingBar from './components/ui/LoadingBar'
+import ScrollProgress from './components/ui/ScrollProgress'
 import AccountPage from './pages/AccountPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
+import PaymentCallbackPage from './pages/PaymentCallbackPage'
 import OrderTrackingPage from './pages/OrderTrackingPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ProductsPage from './pages/ProductsPage'
@@ -16,9 +21,9 @@ import RegisterPage from './pages/RegisterPage'
 import WishlistPage from './pages/WishlistPage'
 
 const pageVariants = {
-  initial: { opacity: 0, y: 14 },
-  enter: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.22 } },
+  initial: { opacity: 0, y: 16, scale: 0.99, filter: 'blur(4px)' },
+  enter:   { opacity: 1, y: 0,  scale: 1,    filter: 'blur(0px)', transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
+  exit:    { opacity: 0, y: -8, scale: 1.005, filter: 'blur(2px)', transition: { duration: 0.25 } },
 }
 
 function AnimatedRoutes() {
@@ -34,9 +39,12 @@ function AnimatedRoutes() {
           <Route path="/orders/:orderId" element={<OrderTrackingPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="*" element={<NotFoundPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/payment/success" element={<PaymentCallbackPage />} />
+            <Route path="/payment/failed" element={<PaymentCallbackPage />} />
+            <Route path="/payment/cancelled" element={<PaymentCallbackPage />} />
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -46,28 +54,37 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <ThemeProvider>
+      <SiteSettingsProvider>
       <AuthProvider>
         <WishlistProvider>
           <CartProvider>
-            <Toaster
-              position="top-right"
-              gutter={8}
-              toastOptions={{
-                duration: 2500,
-                style: {
-                  background: 'var(--bg-deep, #1a1227)',
-                  color: 'var(--fg, #fff)',
-                  border: '1px solid rgba(213,16,110,0.25)',
-                  borderRadius: '14px',
-                  fontSize: '0.875rem',
-                  fontFamily: 'Inter, sans-serif',
-                },
-              }}
-            />
+          <Toaster
+            position="top-right"
+            gutter={10}
+            toastOptions={{
+              duration: 2800,
+              style: {
+                background: 'rgba(5,5,10,0.95)',
+                color: '#fff',
+                border: '1px solid rgba(213,16,110,0.35)',
+                borderRadius: '16px',
+                fontSize: '0.875rem',
+                fontFamily: 'Inter, sans-serif',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(213,16,110,0.12)',
+                backdropFilter: 'blur(20px)',
+                padding: '12px 16px',
+              },
+              success: { iconTheme: { primary: '#D5106E', secondary: '#fff' } },
+            }}
+          />
+          <CustomCursor />
+          <LoadingBar />
+          <ScrollProgress />
             <AnimatedRoutes />
           </CartProvider>
         </WishlistProvider>
       </AuthProvider>
+      </SiteSettingsProvider>
     </ThemeProvider>
   )
 }

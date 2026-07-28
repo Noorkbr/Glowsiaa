@@ -6,6 +6,7 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
+const { pushOrderToDelivery, getSteadfastBalance } = require('../services/delivery');
 
 const router = express.Router();
 const deliveryCompanies = ['pathao', 'steadfast', 'redx'];
@@ -135,36 +136,62 @@ router.post('/push-delivery', adminRateLimit, async (req, res, next) => {
   try {
     const orderId = typeof req.body.orderId === 'string' ? req.body.orderId.trim().toUpperCase() : '';
     const company = typeof req.body.company === 'string' ? req.body.company.trim().toLowerCase() : '';
+    const useRealApi = req.body.useRealApi === true;
 
     if (!orderId || !company) {
       return res.status(400).json({ success: false, message: 'orderId and company are required' });
     }
-
     if (!/^GLS-\d{6}$/.test(orderId)) {
       return res.status(400).json({ success: false, message: 'Invalid orderId format' });
     }
-
     if (!deliveryCompanies.includes(company)) {
       return res.status(400).json({ success: false, message: 'Invalid delivery company' });
     }
 
     const order = await Order.findOne(mongoose.sanitizeFilter({ orderId }));
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+    let trackingNumber;
+    let apiResult = null;
+
+    if (useRealApi) {
+      // Try real delivery API
+      try {
+        const result = await pushOrderToDelivery(order, company, req.body.options || {});
+        trackingNumber = result.trackingCode || result.trackingId || result.consignmentId || `${company.toUpperCase()}${Date.now()}`;
+        apiResult = result;
+      } catch (apiError) {
+        return res.status(502).json({
+          success: false,
+          message: `Delivery API error: ${apiError.message}`,
+          company,
+        });
+      }
+    } else {
+      // Simulated tracking number
+      trackingNumber = `${company.toUpperCase()}${Math.floor(10000000 + Math.random() * 90000000)}`;
     }
-
-    const trackingNumber = `${company.toUpperCase()}${Math.floor(10000000 + Math.random() * 90000000)}`;
 
     order.trackingCompany = company;
     order.trackingNumber = trackingNumber;
     order.status = 'shipped';
     await order.save();
 
-    res.json({ success: true, trackingNumber, order });
+    res.json({ success: true, trackingNumber, order, apiResult });
   } catch (error) {
     next(error);
   }
+});
+
+// Delivery partner balance / health check
+router.get('/delivery/balance', adminRateLimit, async (req, res, next) => {
+  try {
+    if (!process.env.STEADFAST_API_KEY) {
+      return res.json({ success: false, message: 'Steadfast API key not configured' });
+    }
+    const balance = await getSteadfastBalance();
+    res.json({ success: true, balance });
+  } catch (e) { next(e); }
 });
 
 module.exports = router;

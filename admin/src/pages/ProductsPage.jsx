@@ -4,22 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 
-const categories = [
-  { value: 'skincare', label: 'Skincare' },
-  { value: 'makeup', label: 'Makeup' },
-  { value: 'fragrance', label: 'Fragrance' },
-  { value: 'haircare', label: 'Haircare' },
-];
-
 const initialFormState = {
-  name: '',
-  description: '',
-  price: '',
-  comparePrice: '',
-  category: 'skincare',
-  stock: '',
-  badge: '',
-  isFeatured: false,
+  name: '', description: '', price: '', comparePrice: '',
+  category: '', subCategory: '', stock: '', badge: '', isFeatured: false,
   images: ['', '', ''],
 };
 
@@ -30,7 +17,8 @@ const normalizeForm = (product) => ({
   description: product?.description || '',
   price: product?.price?.toString() || '',
   comparePrice: product?.comparePrice?.toString() || '',
-  category: product?.category || 'skincare',
+  category: product?.category || '',
+  subCategory: product?.subCategory || '',
   stock: product?.stock?.toString() || '',
   badge: product?.badge || '',
   isFeatured: Boolean(product?.isFeatured),
@@ -39,6 +27,7 @@ const normalizeForm = (product) => ({
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -50,10 +39,13 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     setLoading(true);
     setError('');
-
     try {
-      const { data } = await api.get('/products');
-      setProducts(data.products || []);
+      const [prodRes, catRes] = await Promise.all([
+        api.get('/products'),
+        api.get('/categories/admin/all'),
+      ]);
+      setProducts(prodRes.data.products || []);
+      setAllCategories(catRes.data.categories || []);
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to load products.');
     } finally {
@@ -112,7 +104,8 @@ export default function ProductsPage() {
       description: form.description.trim(),
       price: Number(form.price),
       comparePrice: form.comparePrice ? Number(form.comparePrice) : undefined,
-      category: form.category,
+      category: form.category.trim().toLowerCase(),
+      subCategory: form.subCategory.trim().toLowerCase() || undefined,
       stock: Number(form.stock),
       badge: form.badge.trim(),
       isFeatured: form.isFeatured,
@@ -297,11 +290,22 @@ export default function ProductsPage() {
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-gray-300">Category</span>
                     <select className="input" name="category" value={form.category} onChange={handleFieldChange} required>
-                      {categories.map((category) => (
-                        <option key={category.value} value={category.value}>
-                          {category.label}
-                        </option>
+                      <option value="">Select category…</option>
+                      {allCategories.filter(c => !c.parent).map((c) => (
+                        <option key={c._id} value={c.slug}>{c.name}</option>
                       ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-gray-300">Sub-Category</span>
+                    <select className="input" name="subCategory" value={form.subCategory} onChange={handleFieldChange}>
+                      <option value="">None</option>
+                      {allCategories
+                        .filter(c => c.parent && allCategories.find(p => p._id === (c.parent?._id || c.parent) && p.slug === form.category))
+                        .map((c) => (
+                          <option key={c._id} value={c.slug}>{c.name}</option>
+                        ))}
                     </select>
                   </label>
 

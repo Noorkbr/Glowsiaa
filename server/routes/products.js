@@ -6,7 +6,6 @@ const { protect, adminOnly } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
-const allowedCategories = ['skincare', 'makeup', 'fragrance', 'haircare'];
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const productRateLimit = createRateLimit({
@@ -16,18 +15,8 @@ const productRateLimit = createRateLimit({
 });
 const pickProductFields = (input) => {
   const allowedFields = [
-    'name',
-    'description',
-    'price',
-    'comparePrice',
-    'category',
-    'stock',
-    'images',
-    'badge',
-    'discount',
-    'rating',
-    'reviewCount',
-    'isFeatured',
+    'name', 'description', 'price', 'comparePrice', 'category', 'subCategory',
+    'stock', 'images', 'badge', 'discount', 'rating', 'reviewCount', 'isFeatured',
   ];
 
   return allowedFields.reduce((payload, field) => {
@@ -41,35 +30,26 @@ const pickProductFields = (input) => {
 
 router.get('/', productRateLimit, async (req, res, next) => {
   try {
-    if (req.query.category && !allowedCategories.includes(req.query.category)) {
-      return res.status(400).json({ success: false, message: 'Invalid category filter' });
-    }
-
-    if (req.query.isFeatured && !['true', 'false'].includes(req.query.isFeatured)) {
-      return res.status(400).json({ success: false, message: 'Invalid isFeatured filter' });
-    }
-
     const searchTerm = typeof req.query.search === 'string' ? req.query.search.trim() : '';
-    const products = await Product.find().sort({ createdAt: -1 });
+    const categoryFilter = typeof req.query.category === 'string' ? req.query.category.toLowerCase() : '';
+    const subCategoryFilter = typeof req.query.subCategory === 'string' ? req.query.subCategory.toLowerCase() : '';
 
-    const filteredProducts = products.filter((product) => {
-      if (req.query.category && product.category !== req.query.category) {
-        return false;
+    const query = {};
+    if (categoryFilter) query.category = categoryFilter;
+    if (subCategoryFilter) query.subCategory = subCategoryFilter;
+    if (typeof req.query.isFeatured === 'string') {
+      if (!['true', 'false'].includes(req.query.isFeatured)) {
+        return res.status(400).json({ success: false, message: 'Invalid isFeatured filter' });
       }
+      query.isFeatured = req.query.isFeatured === 'true';
+    }
+    if (searchTerm) {
+      const safeSearch = new RegExp(escapeRegex(searchTerm), 'i');
+      query.$or = [{ name: safeSearch }, { description: safeSearch }];
+    }
 
-      if (typeof req.query.isFeatured === 'string' && product.isFeatured !== (req.query.isFeatured === 'true')) {
-        return false;
-      }
-
-      if (searchTerm) {
-        const safeSearch = new RegExp(escapeRegex(searchTerm), 'i');
-        return safeSearch.test(product.name);
-      }
-
-      return true;
-    });
-
-    res.json({ success: true, count: filteredProducts.length, products: filteredProducts });
+    const products = await Product.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, count: products.length, products });
   } catch (error) {
     next(error);
   }
