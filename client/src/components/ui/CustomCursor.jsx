@@ -1,12 +1,23 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 
+// Don't show custom cursor on touch/mobile devices
+const isTouchDevice = () =>
+  typeof window !== 'undefined' &&
+  (window.matchMedia('(hover: none)').matches || 'ontouchstart' in window)
+
 export default function CustomCursor() {
+  const [enabled, setEnabled] = useState(false)
   const ringRef  = useRef(null)
   const dotRef   = useRef(null)
   const hovered  = useRef(false)
   const hidden    = useRef(false)
   const clicking  = useRef(false)
+
+  // Detect pointer capability on mount
+  useEffect(() => {
+    if (!isTouchDevice()) setEnabled(true)
+  }, [])
 
   // Raw positions
   const mx = useMotionValue(-200)
@@ -17,6 +28,8 @@ export default function CustomCursor() {
   const ry = useSpring(my, { stiffness: 180, damping: 22, mass: 0.6 })
 
   useEffect(() => {
+    if (!enabled) return
+
     const setHover = (val) => {
       hovered.current = val
       if (!ringRef.current || !dotRef.current) return
@@ -78,7 +91,9 @@ export default function CustomCursor() {
       document.removeEventListener('mousedown',  onDown)
       document.removeEventListener('mouseup',    onUp)
     }
-  }, [mx, my])
+  }, [enabled, mx, my])
+
+  if (!enabled) return null
 
   return (
     <>

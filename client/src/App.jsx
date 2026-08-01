@@ -8,6 +8,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { WishlistProvider } from './context/WishlistContext'
 import LoadingBar from './components/ui/LoadingBar'
 import ScrollProgress from './components/ui/ScrollProgress'
+import CustomCursor from './components/ui/CustomCursor'
 import FacebookPixel from './components/tracking/FacebookPixel'
 import AccountPage from './pages/AccountPage'
 import HomePage from './pages/HomePage'
@@ -79,6 +80,7 @@ export default function App() {
           />
           <LoadingBar />
           <ScrollProgress />
+          <CustomCursor />
           <FacebookPixel />
             <AnimatedRoutes />
           </CartProvider>

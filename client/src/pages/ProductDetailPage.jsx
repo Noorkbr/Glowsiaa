@@ -6,7 +6,6 @@ import CartDrawer from '../components/cart/CartDrawer'
 import CheckoutDrawer from '../components/checkout/CheckoutDrawer'
 import Footer from '../components/layout/Footer'
 import Navbar from '../components/layout/Navbar'
-import ProductCursor from '../components/ui/ProductCursor'
 import WhatsAppButton from '../components/ui/WhatsAppButton'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -113,7 +112,6 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-midnight text-white">
-      <ProductCursor />
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {loading ? (
