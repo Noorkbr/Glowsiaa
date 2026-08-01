@@ -1,4 +1,4 @@
-import { ChevronRight, Heart, Minus, Plus, Star } from 'lucide-react'
+import { ChevronRight, Heart, Minus, Plus, Star, Youtube } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import api from '../api/axios'
@@ -6,6 +6,8 @@ import CartDrawer from '../components/cart/CartDrawer'
 import CheckoutDrawer from '../components/checkout/CheckoutDrawer'
 import Footer from '../components/layout/Footer'
 import Navbar from '../components/layout/Navbar'
+import ProductCursor from '../components/ui/ProductCursor'
+import WhatsAppButton from '../components/ui/WhatsAppButton'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 
@@ -14,6 +16,26 @@ const getImageUrl = (image) => {
   if (!image) return 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80'
   if (typeof image === 'string') return image
   return image.url || image.secure_url || image.src || image.path || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80'
+}
+
+// Convert any YouTube URL format to an embed URL
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    let videoId = null
+    if (parsed.hostname.includes('youtu.be')) {
+      videoId = parsed.pathname.slice(1)
+    } else if (parsed.hostname.includes('youtube.com')) {
+      videoId = parsed.searchParams.get('v')
+      if (!videoId && parsed.pathname.startsWith('/embed/')) {
+        videoId = parsed.pathname.split('/embed/')[1]
+      }
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : null
+  } catch {
+    return null
+  }
 }
 
 function SkeletonDetail() {
@@ -91,6 +113,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-midnight text-white">
+      <ProductCursor />
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {loading ? (
@@ -103,6 +126,7 @@ export default function ProductDetailPage() {
             </Link>
           </div>
         ) : (
+          <>
           <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
             <section>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
@@ -229,11 +253,46 @@ export default function ProductDetailPage() {
               </div>
             </section>
           </div>
+
+          {/* ── YouTube Video Section ── */}
+          {(() => {
+            const embedUrl = getYouTubeEmbedUrl(product?.youtubeUrl)
+            if (!embedUrl) return null
+            return (
+              <div className="mt-16">
+                <div className="mb-6 flex items-center gap-3">
+                  <Youtube size={24} className="text-red-500" />
+                  <h2 className="font-heading text-2xl font-bold text-white">Product Video</h2>
+                </div>
+                <div
+                  className="overflow-hidden rounded-3xl border border-white/10 bg-white/5"
+                  style={{ paddingTop: '56.25%', position: 'relative' }}
+                >
+                  <iframe
+                    src={embedUrl}
+                    title={`${product?.name} video`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          })()}
+          </>
         )}
       </main>
       <Footer />
       <CartDrawer />
       <CheckoutDrawer />
+      <WhatsAppButton />
     </div>
   )
 }

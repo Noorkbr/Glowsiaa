@@ -65,6 +65,11 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  youtubeUrl: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   createdAt: {
     type: Date,
     default: Date.now,

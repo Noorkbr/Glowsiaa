@@ -6,23 +6,25 @@
    CSS Variables
 ────────────────────────────────────────────── */
 :root {
-  --bg:       #F5F3FF;
-  --bg-card:  #FFFFFF;
-  --bg-panel: rgba(110,57,146,0.07);
-  --fg:       #0D0B1A;
-  --fg-muted: rgba(13,11,26,0.55);
-  --border:   rgba(0,0,0,0.09);
-  --midnight: #F5F3FF;
+  --bg:            #F5F3FF;
+  --bg-card:       #FFFFFF;
+  --bg-panel:      rgba(110,57,146,0.07);
+  --fg:            #0D0B1A;
+  --fg-muted:      rgba(13,11,26,0.55);
+  --border:        rgba(0,0,0,0.09);
+  --midnight:      #F5F3FF;
+  --shadow-panel:  0 2px 20px rgba(0,0,0,0.07);
 }
 
 html.dark {
-  --bg:       #070B16;
-  --bg-card:  rgba(255,255,255,0.04);
-  --bg-panel: rgba(255,255,255,0.05);
-  --fg:       #FFFFFF;
-  --fg-muted: rgba(255,255,255,0.55);
-  --border:   rgba(255,255,255,0.10);
-  --midnight: #070B16;
+  --bg:            #070B16;
+  --bg-card:       rgba(255,255,255,0.04);
+  --bg-panel:      rgba(255,255,255,0.05);
+  --fg:            #FFFFFF;
+  --fg-muted:      rgba(255,255,255,0.55);
+  --border:        rgba(255,255,255,0.10);
+  --midnight:      #070B16;
+  --shadow-panel:  0 4px 24px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset;
 }
 
 @layer base {
@@ -51,11 +53,12 @@ html.dark {
   #root { @apply min-h-screen; }
 
   h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', sans-serif; }
+  .font-heading       { font-family: 'Space Grotesk', sans-serif; }
   button, input, select, textarea { font: inherit; }
 
   ::selection { @apply bg-glow-magenta/40 text-white; }
 
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { @apply bg-white/5; }
   ::-webkit-scrollbar-thumb { @apply rounded-full bg-white/15; }
   ::-webkit-scrollbar-thumb:hover { @apply bg-white/25; }
@@ -70,7 +73,6 @@ html.dark {
   .input {
     @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none transition focus:border-glow-magenta focus:ring-2 focus:ring-glow-magenta/20;
     color: var(--fg);
-    placeholder-color: rgba(156,163,175,1);
   }
 
   .input::placeholder { color: rgba(156,163,175,1); }

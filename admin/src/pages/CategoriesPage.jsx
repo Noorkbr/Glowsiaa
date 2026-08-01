@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, FolderOpen, FolderPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 
@@ -167,9 +167,8 @@ export default function CategoriesPage() {
                   const subs = subCats(cat._id);
                   const isExpanded = expandedCats[cat._id];
                   return (
-                    <>
-                      <tr key={cat._id} className="border-t border-white/10 hover:bg-white/[0.02] bg-white/[0.01]">
-                        <td className="px-4 py-4">
+                    <Fragment key={cat._id}>
+                      <tr key={cat._id} className="border-t border-white/10 hover:bg-white/[0.02] bg-white/[0.01]">                        <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
                             {subs.length > 0 && (
                               <button type="button" onClick={() => toggleExpand(cat._id)} className="text-gray-500 hover:text-white">
@@ -267,7 +266,7 @@ export default function CategoriesPage() {
                           </motion.tr>
                         ))}
                       </AnimatePresence>
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -281,7 +280,7 @@ export default function CategoriesPage() {
         {showModal && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="panel w-full max-w-lg p-6"
+            <motion.div className="panel w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
               initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }}>
               <div className="mb-6 flex items-center justify-between">
                 <div>

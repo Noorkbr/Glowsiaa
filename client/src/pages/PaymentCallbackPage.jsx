@@ -14,26 +14,29 @@ export default function PaymentCallbackPage() {
     const paymentID = searchParams.get('paymentID')
     const ref = searchParams.get('ref')
     const method = searchParams.get('method')
+    const orderIdParam = searchParams.get('orderId')
     const currentPath = window.location.pathname
 
     const processPayment = async () => {
       try {
         if (currentPath.includes('success')) {
           if (method === 'bkash' && paymentID) {
-            // Execute bKash payment
-            const { data } = await api.post('/payments/bkash/execute', { paymentID })
+            // Execute bKash payment — pass orderId so the order status gets confirmed
+            const { data } = await api.post('/payments/bkash/execute', { paymentID, orderId: orderIdParam })
             if (data.success) {
-              setOrderId(data.orderId || '')
+              setOrderId(orderIdParam || data.orderId || '')
               setStatus('success')
               return
             }
           } else if (method === 'nagad' && ref) {
-            const { data } = await api.post('/payments/nagad/verify', { paymentRefId: ref })
+            const { data } = await api.post('/payments/nagad/verify', { paymentRefId: ref, orderId: orderIdParam })
             if (data.success) {
+              setOrderId(orderIdParam || '')
               setStatus('success')
               return
             }
           } else {
+            setOrderId(orderIdParam || '')
             setStatus('success')
             return
           }

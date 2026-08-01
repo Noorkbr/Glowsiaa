@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Plus, Tag, Pencil, Trash2, X, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -187,7 +187,7 @@ export default function CouponsPage() {
         {showModal && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="panel w-full max-w-lg p-6"
+            <motion.div className="panel w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}>
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">{editingCoupon ? 'Edit Coupon' : 'Create Coupon'}</h2>

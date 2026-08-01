@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion'
 import { ArrowRight, Play, Sparkles } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '../../api/axios'
 import MagneticButton from '../ui/MagneticButton'
 
@@ -57,18 +57,27 @@ function HeadlineReveal({ lines }) {
 
 function ParallaxProduct({ imageUrl, alt = 'Product' }) {
   const containerRef = useRef(null)
+  const rafId = useRef(null)
   const rx = useMotionValue(0)
   const ry = useMotionValue(0)
-  const srx = useSpring(rx, { stiffness: 180, damping: 18 })
-  const sry = useSpring(ry, { stiffness: 180, damping: 18 })
+  const srx = useSpring(rx, { stiffness: 160, damping: 20, mass: 0.5 })
+  const sry = useSpring(ry, { stiffness: 160, damping: 20, mass: 0.5 })
 
-  const onMouseMove = (e) => {
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
-    rx.set(((e.clientY - rect.top)  / rect.height - 0.5) * -18)
-    ry.set(((e.clientX - rect.left) / rect.width  - 0.5) *  18)
-  }
-  const onMouseLeave = () => { rx.set(0); ry.set(0) }
+  const onMouseMove = useCallback((e) => {
+    if (rafId.current) return
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) return
+      rx.set(((e.clientY - rect.top)  / rect.height - 0.5) * -18)
+      ry.set(((e.clientX - rect.left) / rect.width  - 0.5) *  18)
+    })
+  }, [rx, ry])
+
+  const onMouseLeave = useCallback(() => {
+    if (rafId.current) { cancelAnimationFrame(rafId.current); rafId.current = null }
+    rx.set(0); ry.set(0)
+  }, [rx, ry])
 
   return (
     <div ref={containerRef} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}

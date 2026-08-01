@@ -8,6 +8,7 @@ const initialFormState = {
   name: '', description: '', price: '', comparePrice: '',
   category: '', subCategory: '', stock: '', badge: '', isFeatured: false,
   images: ['', '', ''],
+  youtubeUrl: '',
 };
 
 const currencyFormatter = new Intl.NumberFormat('en-BD');
@@ -23,6 +24,7 @@ const normalizeForm = (product) => ({
   badge: product?.badge || '',
   isFeatured: Boolean(product?.isFeatured),
   images: [product?.images?.[0] || '', product?.images?.[1] || '', product?.images?.[2] || ''],
+  youtubeUrl: product?.youtubeUrl || '',
 });
 
 export default function ProductsPage() {
@@ -110,6 +112,7 @@ export default function ProductsPage() {
       badge: form.badge.trim(),
       isFeatured: form.isFeatured,
       images: form.images.map((image) => image.trim()).filter(Boolean),
+      youtubeUrl: form.youtubeUrl.trim(),
     };
 
     try {
@@ -330,6 +333,18 @@ export default function ProductsPage() {
                       <input className="input" value={image} onChange={(event) => handleImageChange(index, event.target.value)} placeholder="https://example.com/product-image.jpg" />
                     </label>
                   ))}
+
+                  <label className="block md:col-span-2">
+                    <span className="mb-2 block text-sm font-medium text-gray-300">YouTube Video URL <span className="text-gray-500 font-normal">(optional)</span></span>
+                    <input
+                      className="input"
+                      name="youtubeUrl"
+                      value={form.youtubeUrl}
+                      onChange={handleFieldChange}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Paste a full YouTube URL — it will be embedded on the product detail page.</p>
+                  </label>
                 </div>
 
                 <div className="flex justify-end gap-3">

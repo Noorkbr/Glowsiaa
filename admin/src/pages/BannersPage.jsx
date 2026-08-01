@@ -191,9 +191,9 @@ export default function BannersPage() {
       {/* Create / Edit Modal */}
       <AnimatePresence>
         {showModal && (
-          <motion.div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-4 backdrop-blur-sm pt-10"
+          <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="panel w-full max-w-3xl p-6 mb-10"
+            <motion.div className="panel w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}>
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">{editingBanner ? 'Edit Banner' : 'Create Banner'}</h2>

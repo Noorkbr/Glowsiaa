@@ -16,7 +16,7 @@ const productRateLimit = createRateLimit({
 const pickProductFields = (input) => {
   const allowedFields = [
     'name', 'description', 'price', 'comparePrice', 'category', 'subCategory',
-    'stock', 'images', 'badge', 'discount', 'rating', 'reviewCount', 'isFeatured',
+    'stock', 'images', 'badge', 'discount', 'rating', 'reviewCount', 'isFeatured', 'youtubeUrl',
   ];
 
   return allowedFields.reduce((payload, field) => {

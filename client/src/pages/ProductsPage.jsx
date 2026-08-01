@@ -7,6 +7,8 @@ import CheckoutDrawer from '../components/checkout/CheckoutDrawer'
 import Footer from '../components/layout/Footer'
 import Navbar from '../components/layout/Navbar'
 import ProductCard from '../components/product/ProductCard'
+import ProductCursor from '../components/ui/ProductCursor'
+import WhatsAppButton from '../components/ui/WhatsAppButton'
 
 const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str
 
@@ -81,6 +83,7 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-midnight text-white">
+      <ProductCursor />
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -199,6 +202,7 @@ export default function ProductsPage() {
       <Footer />
       <CartDrawer />
       <CheckoutDrawer />
+      <WhatsAppButton />
     </div>
   )
 }

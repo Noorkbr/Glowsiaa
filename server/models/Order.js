@@ -78,8 +78,21 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cod', 'bkash', 'nagad'],
+    enum: ['cod', 'bkash', 'nagad', 'rocket'],
     default: 'cod',
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  couponCode: {
+    type: String,
+    trim: true,
+  },
+  paymentDetails: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
   },
   status: {
     type: String,

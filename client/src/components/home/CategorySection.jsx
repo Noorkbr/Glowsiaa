@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { Droplets, Heart, Sparkles, Wind, Layers } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
@@ -14,7 +13,6 @@ const FALLBACK = [
 
 export default function CategorySection() {
   const [categories, setCategories] = useState(FALLBACK)
-  const [expandedCat, setExpandedCat] = useState(null)
 
   useEffect(() => {
     api.get('/categories')
@@ -49,7 +47,7 @@ export default function CategorySection() {
             >
               <Link
                 to={`/products?category=${cat.slug}`}
-                className={`block rounded-2xl border border-white/10 bg-gradient-to-br ${cat.gradient} p-6 transition duration-300 hover:-translate-y-2 hover:shadow-[0_22px_60px_rgba(213,16,110,0.24)]`}
+                className={`block rounded-2xl border border-white/10 bg-gradient-to-br ${cat.gradient || 'from-[#6E3992] to-[#D5106E]'} p-6 transition duration-300 hover:-translate-y-2 hover:shadow-[0_22px_60px_rgba(213,16,110,0.24)]`}
               >
                 {cat.imageUrl ? (
                   <div className="mb-4 h-16 w-16 overflow-hidden rounded-2xl">
@@ -60,12 +58,12 @@ export default function CategorySection() {
                     {cat.emoji || '✨'}
                   </div>
                 )}
-                <h3 className="mt-4 font-heading text-2xl font-semibold text-white">{cat.name}</h3>
+                <h3 className="mt-4 font-heading text-2xl font-semibold text-white drop-shadow-sm">{cat.name}</h3>
                 {cat.description && (
-                  <p className="mt-1 text-sm text-white/70 line-clamp-1">{cat.description}</p>
+                  <p className="mt-1 text-sm text-white/80 line-clamp-1">{cat.description}</p>
                 )}
-                <p className="mt-2 text-sm text-white/80">
-                  {cat.productCount !== null && cat.productCount !== undefined ? `${cat.productCount} Products` : 'Shop Now'}
+                <p className="mt-2 text-sm font-medium text-white/90">
+                  {cat.productCount !== null && cat.productCount !== undefined ? `${cat.productCount} Products` : 'Shop Now →'}
                 </p>
               </Link>
 

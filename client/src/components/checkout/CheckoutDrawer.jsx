@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
 import { useCart } from '../../context/CartContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 
 const fmt = (v) => `৳${Number(v || 0).toLocaleString('en-BD')}`
 const phoneRegex = /^01[0-9]{9}$/
@@ -17,6 +18,7 @@ const INIT_FORM = { name: '', phone: '', address: '', location: 'inside_dhaka', 
 
 export default function CheckoutDrawer() {
   const { items: cartItems, cartTotal, isCheckoutOpen, closeCheckout, clearCart } = useCart()
+  const { settings } = useSiteSettings()
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState(INIT_FORM)
@@ -43,7 +45,14 @@ export default function CheckoutDrawer() {
     }
   }, [isCheckoutOpen])
 
-  const deliveryFee = useMemo(() => form.location === 'outside_dhaka' ? 120 : 60, [form.location])
+  const deliveryFee = useMemo(() => {
+    const inside = Number(settings.delivery_fee_inside ?? 60)
+    const outside = Number(settings.delivery_fee_outside ?? 120)
+    const freeAbove = Number(settings.free_delivery_above ?? 0)
+    const rawFee = form.location === 'outside_dhaka' ? outside : inside
+    // Apply free delivery threshold
+    return freeAbove > 0 && cartTotal >= freeAbove ? 0 : rawFee
+  }, [form.location, settings, cartTotal])
   const discount = useMemo(() => couponData?.discountAmount || 0, [couponData])
   const grandTotal = cartTotal + deliveryFee - discount
 
@@ -82,6 +91,11 @@ export default function CheckoutDrawer() {
     if (!cartItems.length) { setError('Your cart is empty.'); return }
     setLoading(true); setError('')
 
+    // Compute the server base URL for payment callbacks
+    // In production set VITE_SERVER_URL=https://api.yourdomain.com in client/.env
+    const serverBase = import.meta.env.VITE_SERVER_URL ||
+      window.location.origin.replace(':5173', ':5000').replace(':5174', ':5000')
+
     try {
       // First create the order in DB
       const payload = {
@@ -90,18 +104,17 @@ export default function CheckoutDrawer() {
         paymentMethod: form.paymentMethod,
         couponCode: couponData?.coupon?.code,
         discount,
-        notes: couponData ? `Coupon: ${couponData.coupon.code}` : undefined,
       }
 
       const { data: orderData } = await api.post('/orders', payload)
       const orderId = orderData?.order?.orderId ?? orderData?.orderId ?? 'Pending'
 
       if (form.paymentMethod === 'bkash') {
-        // Redirect to bKash payment
         const { data: bkData } = await api.post('/payments/bkash/create', {
           amount: grandTotal,
           orderId,
-          callbackURL: `${window.location.origin}/payment/bkash-callback`,
+          // Pass orderId as query param so callback can include it in redirect
+          callbackURL: `${serverBase}/api/payments/bkash/callback?orderId=${orderId}`,
         })
         clearCart()
         window.location.href = bkData.bkashURL
@@ -112,14 +125,14 @@ export default function CheckoutDrawer() {
         const { data: ngData } = await api.post('/payments/nagad/create', {
           amount: grandTotal,
           orderId,
-          callbackURL: `${window.location.origin}/payment/nagad-callback`,
+          callbackURL: `${serverBase}/api/payments/nagad/callback?orderId=${orderId}`,
         })
         clearCart()
         window.location.href = ngData.callBackUrl
         return
       }
 
-      // COD — done
+      // Rocket or COD — show success screen
       setPlacedOrderId(orderId)
       setSuccess(true)
       clearCart()
@@ -196,8 +209,8 @@ export default function CheckoutDrawer() {
                     <span className="text-sm font-medium text-white/85">Location</span>
                     <select name="location" value={form.location} onChange={handleChange}
                       className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-glow-magenta">
-                      <option value="inside_dhaka" className="bg-midnight">Inside Dhaka (৳60)</option>
-                      <option value="outside_dhaka" className="bg-midnight">Outside Dhaka (৳120)</option>
+                      <option value="inside_dhaka" className="bg-midnight">Inside Dhaka (৳{settings.delivery_fee_inside ?? 60})</option>
+                      <option value="outside_dhaka" className="bg-midnight">Outside Dhaka (৳{settings.delivery_fee_outside ?? 120})</option>
                     </select>
                   </label>
                   {error && <p className="text-sm text-red-400">{error}</p>}
@@ -226,7 +239,13 @@ export default function CheckoutDrawer() {
                     </div>
                     <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
                       <div className="flex justify-between text-white/70"><span>Subtotal</span><span>{fmt(cartTotal)}</span></div>
-                      <div className="flex justify-between text-white/70"><span>Delivery</span><span>{fmt(deliveryFee)}</span></div>
+                      <div className="flex justify-between text-white/70">
+                        <span>Delivery</span>
+                        {deliveryFee === 0
+                          ? <span className="text-emerald-400 font-semibold">FREE 🎉</span>
+                          : <span>{fmt(deliveryFee)}</span>
+                        }
+                      </div>
                       {discount > 0 && (
                         <div className="flex justify-between text-emerald-400"><span>Coupon ({couponData.coupon.code})</span><span>-{fmt(discount)}</span></div>
                       )}
@@ -267,21 +286,22 @@ export default function CheckoutDrawer() {
                     <h3 className="font-heading text-base font-semibold text-white mb-3">Payment Method</h3>
                     <div className="space-y-2">
                       {([
-                        { key: 'cod', label: 'Cash on Delivery', sub: 'Pay when delivered', enabled: true, emoji: '💵' },
-                        { key: 'bkash', label: 'bKash', sub: 'Secure mobile payment', enabled: gateways.bkash?.enabled, emoji: '💙' },
-                        { key: 'nagad', label: 'Nagad', sub: 'Digital payment', enabled: gateways.nagad?.enabled, emoji: '🟠' },
-                      ]).map(pm => (
+                        { key: 'cod',    label: 'Cash on Delivery', sub: 'Pay when delivered',   enabled: settings.cod_enabled !== false, emoji: '💵' },
+                        { key: 'bkash',  label: 'bKash',            sub: 'Secure mobile payment', enabled: Boolean(gateways.bkash?.enabled && settings.bkash_enabled), emoji: '💙' },
+                        { key: 'nagad',  label: 'Nagad',            sub: 'Digital payment',       enabled: Boolean(gateways.nagad?.enabled && settings.nagad_enabled), emoji: '🟠' },
+                        { key: 'rocket', label: 'Rocket',           sub: 'Mobile banking',        enabled: Boolean(settings.rocket_enabled), emoji: '🚀' },
+                      ]).filter(pm => Boolean(pm.enabled)).map(pm => (
                         <label key={pm.key}
-                          className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3.5 transition ${!pm.enabled ? 'cursor-not-allowed border-white/5 opacity-40' : form.paymentMethod === pm.key ? 'border-glow-magenta/40 bg-glow-magenta/10' : 'border-white/10 hover:border-white/20'}`}>
+                          className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3.5 transition ${form.paymentMethod === pm.key ? 'border-glow-magenta/40 bg-glow-magenta/10' : 'border-white/10 hover:border-white/20'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{pm.emoji}</span>
                             <div>
                               <p className="font-medium text-white">{pm.label}</p>
-                              <p className="text-xs text-white/50">{pm.enabled ? pm.sub : 'Not available'}</p>
+                              <p className="text-xs text-white/50">{pm.sub}</p>
                             </div>
                           </div>
                           <input type="radio" name="paymentMethod" value={pm.key} checked={form.paymentMethod === pm.key}
-                            onChange={handleChange} disabled={!pm.enabled} className="accent-glow-magenta" />
+                            onChange={handleChange} className="accent-glow-magenta" />
                         </label>
                       ))}
                     </div>
@@ -297,7 +317,7 @@ export default function CheckoutDrawer() {
                     <button type="button" onClick={handlePlaceOrder} disabled={loading}
                       className="flex-1 rounded-2xl bg-glow-magenta px-5 py-4 text-sm font-semibold uppercase text-white disabled:opacity-70"
                       style={{ boxShadow: '0 0 28px rgba(213,16,110,0.35)' }}>
-                      {loading ? 'Processing...' : form.paymentMethod === 'cod' ? 'Place Order' : `Pay with ${form.paymentMethod === 'bkash' ? 'bKash' : 'Nagad'}`}
+                       {loading ? 'Processing...' : form.paymentMethod === 'cod' ? 'Place Order' : `Pay with ${form.paymentMethod === 'bkash' ? 'bKash' : form.paymentMethod === 'nagad' ? 'Nagad' : 'Rocket'}`}
                     </button>
                   </div>
                 </div>

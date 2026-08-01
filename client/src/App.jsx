@@ -6,9 +6,9 @@ import { CartProvider } from './context/CartContext'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { WishlistProvider } from './context/WishlistContext'
-import CustomCursor from './components/ui/CustomCursor'
 import LoadingBar from './components/ui/LoadingBar'
 import ScrollProgress from './components/ui/ScrollProgress'
+import FacebookPixel from './components/tracking/FacebookPixel'
 import AccountPage from './pages/AccountPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -77,9 +77,9 @@ export default function App() {
               success: { iconTheme: { primary: '#D5106E', secondary: '#fff' } },
             }}
           />
-          <CustomCursor />
           <LoadingBar />
           <ScrollProgress />
+          <FacebookPixel />
             <AnimatedRoutes />
           </CartProvider>
         </WishlistProvider>

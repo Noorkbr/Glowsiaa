@@ -8,5 +8,18 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:5000'
     }
-  }
+  },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor':  ['react', 'react-dom', 'react-router-dom'],
+          'framer-motion': ['framer-motion'],
+          'icons':         ['lucide-react'],
+          'axios':         ['axios'],
+        },
+      },
+    },
+  },
 })

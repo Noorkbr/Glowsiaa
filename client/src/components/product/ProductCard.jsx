@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { Heart, ShoppingBag, Star, Zap } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useWishlist } from '../../context/WishlistContext'
@@ -36,14 +36,15 @@ export default function ProductCard({ product }) {
   const { addToCart, openDrawer } = useCart()
   const { toggleWishlist, isWishlisted } = useWishlist()
   const ref = useRef(null)
+  const rafId = useRef(null)
   const [hover, setHover] = useState(false)
   const [imgIdx, setImgIdx] = useState(0)
 
   // 3D Tilt
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 })
-  const smy = useSpring(my, { stiffness: 220, damping: 22 })
+  const smx = useSpring(mx, { stiffness: 180, damping: 22, mass: 0.5 })
+  const smy = useSpring(my, { stiffness: 180, damping: 22, mass: 0.5 })
   const rotateX = useTransform(smy, [-0.5, 0.5], ['10deg', '-10deg'])
   const rotateY = useTransform(smx, [-0.5, 0.5], ['-10deg', '10deg'])
 
@@ -51,20 +52,27 @@ export default function ProductCard({ product }) {
   const glowX = useTransform(smx, [-0.5, 0.5], ['0%', '100%'])
   const glowY = useTransform(smy, [-0.5, 0.5], ['0%', '100%'])
 
-  const onMouseMove = (e) => {
-    if (!ref.current) return
-    const r = ref.current.getBoundingClientRect()
-    mx.set((e.clientX - r.left) / r.width  - 0.5)
-    my.set((e.clientY - r.top)  / r.height - 0.5)
-  }
-  const onMouseLeave = () => {
+  const onMouseMove = useCallback((e) => {
+    if (rafId.current) return
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null
+      if (!ref.current) return
+      const r = ref.current.getBoundingClientRect()
+      mx.set((e.clientX - r.left) / r.width  - 0.5)
+      my.set((e.clientY - r.top)  / r.height - 0.5)
+    })
+  }, [mx, my])
+
+  const onMouseLeave = useCallback(() => {
+    if (rafId.current) { cancelAnimationFrame(rafId.current); rafId.current = null }
     mx.set(0); my.set(0)
     setHover(false); setImgIdx(0)
-  }
-  const onMouseEnter = () => {
+  }, [mx, my])
+
+  const onMouseEnter = useCallback(() => {
     setHover(true)
     setImgIdx(1)
-  }
+  }, [])
 
   const images = useMemo(() => {
     const list = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [product?.image]
@@ -89,14 +97,9 @@ export default function ProductCard({ product }) {
       onMouseLeave={onMouseLeave}
       onMouseEnter={onMouseEnter}
       onClick={() => navigate(`/product/${pid}`)}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 1000 }}
       whileHover={{ scale: 1.025 }}
       whileTap={{ scale: 0.97 }}
       className="group relative cursor-none overflow-hidden rounded-3xl"
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       style={{
         rotateX, rotateY,
         transformStyle: 'preserve-3d',

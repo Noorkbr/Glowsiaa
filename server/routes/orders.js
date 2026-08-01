@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 
 const Order = require('../models/Order');
+const Product = require('../models/Product');
+const Coupon = require('../models/Coupon');
+const SiteSetting = require('../models/SiteSetting');
 const { protect, adminOnly } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
 
@@ -39,7 +42,7 @@ router.post(
     body('items.*.name').trim().notEmpty().withMessage('Item name is required'),
     body('items.*.price').isFloat({ min: 0 }).withMessage('Item price must be a positive number'),
     body('items.*.quantity').isInt({ min: 1 }).withMessage('Item quantity must be at least 1'),
-    body('paymentMethod').optional().isIn(['cod', 'bkash', 'nagad']).withMessage('Invalid payment method'),
+    body('paymentMethod').optional().isIn(['cod', 'bkash', 'nagad', 'rocket']).withMessage('Invalid payment method'),
   ],
   async (req, res, next) => {
     try {
@@ -47,7 +50,7 @@ router.post(
         return;
       }
 
-      const { customer, items, paymentMethod = 'cod', notes } = req.body;
+      const { customer, items, paymentMethod = 'cod', notes, discount = 0, couponCode } = req.body;
       const normalizedItems = items.map((item) => ({
         product: item.product || undefined,
         name: item.name,
@@ -57,19 +60,54 @@ router.post(
       }));
 
       const subtotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const deliveryFee = customer.location === 'inside_dhaka' ? 60 : 120;
-      const total = subtotal + deliveryFee;
+
+      // Read delivery fees from DB settings (fallback to defaults)
+      const [insideSetting, outsideSetting, freeAboveSetting] = await Promise.all([
+        SiteSetting.findOne({ key: 'delivery_fee_inside' }),
+        SiteSetting.findOne({ key: 'delivery_fee_outside' }),
+        SiteSetting.findOne({ key: 'free_delivery_above' }),
+      ]);
+      const feeInside  = Number(insideSetting?.value ?? 60);
+      const feeOutside = Number(outsideSetting?.value ?? 120);
+      const freeAbove  = Number(freeAboveSetting?.value ?? 0);
+      const baseFee    = customer.location === 'inside_dhaka' ? feeInside : feeOutside;
+      // Apply free delivery threshold
+      const deliveryFee = freeAbove > 0 && subtotal >= freeAbove ? 0 : baseFee;
+      const discountAmount = Math.max(0, Number(discount) || 0);
+      const total = Math.max(0, subtotal + deliveryFee - discountAmount);
 
       const order = await Order.create({
         customer,
         items: normalizedItems,
         subtotal,
         deliveryFee,
+        discount: discountAmount,
+        couponCode,
         total,
         paymentMethod,
         notes,
         userId: req.user ? req.user._id : undefined,
       });
+
+      // ── Post-order side-effects (non-blocking, best-effort) ──
+      // 1. Decrement stock for each product
+      const stockOps = normalizedItems
+        .filter((item) => item.product)
+        .map((item) => ({
+          updateOne: {
+            filter: { _id: item.product, stock: { $gte: item.quantity } },
+            update: { $inc: { stock: -item.quantity } },
+          },
+        }));
+      if (stockOps.length) Product.bulkWrite(stockOps).catch(() => {});
+
+      // 2. Increment coupon usedCount
+      if (couponCode) {
+        Coupon.findOneAndUpdate(
+          { code: couponCode.toUpperCase(), isActive: true },
+          { $inc: { usedCount: 1 } }
+        ).catch(() => {});
+      }
 
       res.status(201).json({ success: true, order });
     } catch (error) {

@@ -250,9 +250,9 @@ export default function ContentPage() {
       {/* ─── Edit Card Modal ─── */}
       <AnimatePresence>
         {editingCard && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm overflow-y-auto"
+          <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="panel w-full max-w-md p-6 my-4"
+            <motion.div className="panel w-full max-w-md max-h-[90vh] overflow-y-auto p-6"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}>
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">Edit Promo Card</h2>
@@ -317,9 +317,9 @@ export default function ContentPage() {
       {/* ─── Tip Modal ─── */}
       <AnimatePresence>
         {showModal && (
-          <motion.div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-4 backdrop-blur-sm pt-8"
+          <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="panel w-full max-w-2xl p-6 mb-8"
+            <motion.div className="panel w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}>
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">{editingTip ? 'Edit Tip' : 'Create Beauty Tip'}</h2>

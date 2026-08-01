@@ -1,104 +1,121 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 
 export default function CustomCursor() {
-  const [hovered, setHovered] = useState(false)
-  const [hidden, setHidden] = useState(false)
-  const [clicking, setClicking] = useState(false)
+  const ringRef  = useRef(null)
+  const dotRef   = useRef(null)
+  const hovered  = useRef(false)
+  const hidden    = useRef(false)
+  const clicking  = useRef(false)
 
-  const mouseX = useMotionValue(-100)
-  const mouseY = useMotionValue(-100)
+  // Raw positions
+  const mx = useMotionValue(-200)
+  const my = useMotionValue(-200)
 
-  // Tight spring for the dot
-  const dotX = useSpring(mouseX, { stiffness: 800, damping: 28 })
-  const dotY = useSpring(mouseY, { stiffness: 800, damping: 28 })
-
-  // Loose spring for the ring (trail effect)
-  const ringX = useSpring(mouseX, { stiffness: 200, damping: 22 })
-  const ringY = useSpring(mouseY, { stiffness: 200, damping: 22 })
+  // Ring trails slightly behind (loose spring)
+  const rx = useSpring(mx, { stiffness: 180, damping: 22, mass: 0.6 })
+  const ry = useSpring(my, { stiffness: 180, damping: 22, mass: 0.6 })
 
   useEffect(() => {
-    const moveCursor = (e) => {
-      mouseX.set(e.clientX)
-      mouseY.set(e.clientY)
-      setHidden(false)
+    const setHover = (val) => {
+      hovered.current = val
+      if (!ringRef.current || !dotRef.current) return
+      const size = val ? 44 : 34
+      ringRef.current.style.width  = size + 'px'
+      ringRef.current.style.height = size + 'px'
+      ringRef.current.style.borderColor = val
+        ? 'rgba(213,16,110,0.9)'
+        : 'rgba(213,16,110,0.5)'
+      ringRef.current.style.boxShadow = val
+        ? '0 0 16px rgba(213,16,110,0.55)'
+        : '0 0 6px rgba(213,16,110,0.25)'
+      dotRef.current.style.width  = val ? '10px' : '8px'
+      dotRef.current.style.height = val ? '10px' : '8px'
     }
-    const handleMouseLeave = () => setHidden(true)
-    const handleMouseDown = () => setClicking(true)
-    const handleMouseUp = () => setClicking(false)
 
-    const handleHover = () => setHovered(true)
-    const handleUnhover = () => setHovered(false)
+    const onMove = (e) => {
+      mx.set(e.clientX)
+      my.set(e.clientY)
+      if (hidden.current) {
+        hidden.current = false
+        if (ringRef.current) ringRef.current.style.opacity = '1'
+        if (dotRef.current)  dotRef.current.style.opacity  = '1'
+      }
+    }
 
-    window.addEventListener('mousemove', moveCursor)
-    document.addEventListener('mouseleave', handleMouseLeave)
-    window.addEventListener('mousedown', handleMouseDown)
-    window.addEventListener('mouseup', handleMouseUp)
+    // Event delegation — single listener on document
+    const onOver = (e) => {
+      const el = e.target?.closest('a, button, [data-cursor], label[for], select, [role="button"]')
+      setHover(Boolean(el))
+    }
 
-    // Detect hoverable elements
-    const interactiveEls = document.querySelectorAll('a, button, [data-cursor]')
-    interactiveEls.forEach(el => {
-      el.addEventListener('mouseenter', handleHover)
-      el.addEventListener('mouseleave', handleUnhover)
-    })
+    const onLeave  = () => {
+      hidden.current = true
+      if (ringRef.current) ringRef.current.style.opacity = '0'
+      if (dotRef.current)  dotRef.current.style.opacity  = '0'
+    }
 
-    // MutationObserver to attach to dynamically added elements
-    const observer = new MutationObserver(() => {
-      document.querySelectorAll('a, button, [data-cursor]').forEach(el => {
-        el.addEventListener('mouseenter', handleHover)
-        el.addEventListener('mouseleave', handleUnhover)
-      })
-    })
-    observer.observe(document.body, { subtree: true, childList: true })
+    const onDown = () => {
+      clicking.current = true
+      if (dotRef.current) { dotRef.current.style.width = '5px'; dotRef.current.style.height = '5px' }
+    }
+    const onUp = () => {
+      clicking.current = false
+      const val = hovered.current
+      if (dotRef.current) { dotRef.current.style.width = val ? '10px' : '8px'; dotRef.current.style.height = val ? '10px' : '8px' }
+    }
+
+    document.addEventListener('mousemove',  onMove,  { passive: true })
+    document.addEventListener('mouseover',  onOver,  { passive: true })
+    document.addEventListener('mouseleave', onLeave, { passive: true })
+    document.addEventListener('mousedown',  onDown,  { passive: true })
+    document.addEventListener('mouseup',    onUp,    { passive: true })
 
     return () => {
-      window.removeEventListener('mousemove', moveCursor)
-      document.removeEventListener('mouseleave', handleMouseLeave)
-      window.removeEventListener('mousedown', handleMouseDown)
-      window.removeEventListener('mouseup', handleMouseUp)
-      observer.disconnect()
+      document.removeEventListener('mousemove',  onMove)
+      document.removeEventListener('mouseover',  onOver)
+      document.removeEventListener('mouseleave', onLeave)
+      document.removeEventListener('mousedown',  onDown)
+      document.removeEventListener('mouseup',    onUp)
     }
-  }, [mouseX, mouseY])
+  }, [mx, my])
 
   return (
     <>
-      {/* Outer ring — trails behind */}
+      {/* Ring — trails behind */}
       <motion.div
+        ref={ringRef}
         className="pointer-events-none fixed z-[9999] rounded-full"
         style={{
-          left: ringX,
-          top: ringY,
+          left: rx,
+          top:  ry,
           translateX: '-50%',
           translateY: '-50%',
-          width:  hovered ? 48 : 36,
-          height: hovered ? 48 : 36,
-          border: `1.5px solid ${hovered ? 'rgba(213,16,110,0.9)' : 'rgba(213,16,110,0.45)'}`,
-          boxShadow: hovered ? '0 0 16px rgba(213,16,110,0.6)' : '0 0 6px rgba(213,16,110,0.3)',
-          opacity: hidden ? 0 : 1,
-          transition: 'width 0.18s ease, height 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
+          width:  34,
+          height: 34,
+          border: '1.5px solid rgba(213,16,110,0.5)',
+          boxShadow: '0 0 6px rgba(213,16,110,0.25)',
+          transition: 'width 0.15s ease, height 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
+          willChange: 'transform',
         }}
       />
-
-      {/* Inner dot — snaps precisely */}
+      {/* Dot — snaps to cursor instantly */}
       <motion.div
+        ref={dotRef}
         className="pointer-events-none fixed z-[10000] rounded-full"
         style={{
-          left: dotX,
-          top:  dotY,
+          left: mx,
+          top:  my,
           translateX: '-50%',
           translateY: '-50%',
-          width:           clicking ? 6 : hovered ? 10 : 8,
-          height:          clicking ? 6 : hovered ? 10 : 8,
+          width:  8,
+          height: 8,
           backgroundColor: '#D5106E',
-          boxShadow:       hovered
-            ? '0 0 20px 4px rgba(213,16,110,0.8)'
-            : '0 0 10px 2px rgba(213,16,110,0.55)',
-          opacity: hidden ? 0 : 1,
-          transition: 'width 0.12s ease, height 0.12s ease',
-          mixBlendMode: 'normal',
+          boxShadow: '0 0 10px 2px rgba(213,16,110,0.55)',
+          transition: 'width 0.1s ease, height 0.1s ease',
+          willChange: 'transform',
         }}
       />
     </>
   )
 }
-

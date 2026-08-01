@@ -66,11 +66,13 @@ router.post('/bkash/execute', rl, async (req, res, next) => {
 
 // bKash callback — redirect target from bKash
 router.get('/bkash/callback', async (req, res) => {
-  const { paymentID, status } = req.query;
+  const { paymentID, status, orderId } = req.query;
   const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
 
   if (status === 'success') {
-    return res.redirect(`${clientURL}/payment/success?paymentID=${paymentID}&method=bkash`);
+    const qs = new URLSearchParams({ paymentID, method: 'bkash' });
+    if (orderId) qs.set('orderId', orderId);
+    return res.redirect(`${clientURL}/payment/success?${qs.toString()}`);
   }
   if (status === 'cancel') {
     return res.redirect(`${clientURL}/payment/cancelled?method=bkash`);
@@ -107,11 +109,15 @@ router.post('/nagad/create', rl, async (req, res, next) => {
 
 // Nagad callback redirect
 router.get('/nagad/callback', async (req, res) => {
-  const { order_id, status, payment_ref_id } = req.query;
+  const { order_id, status, payment_ref_id, orderId } = req.query;
   const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
+  const oid = orderId || order_id;
 
   if (status === 'Success') {
-    return res.redirect(`${clientURL}/payment/success?ref=${payment_ref_id}&method=nagad`);
+    const qs = new URLSearchParams({ method: 'nagad' });
+    if (payment_ref_id) qs.set('ref', payment_ref_id);
+    if (oid) qs.set('orderId', oid);
+    return res.redirect(`${clientURL}/payment/success?${qs.toString()}`);
   }
   return res.redirect(`${clientURL}/payment/failed?method=nagad`);
 });
@@ -146,6 +152,9 @@ router.get('/gateways', async (req, res) => {
       nagad: {
         enabled: Boolean(process.env.NAGAD_MERCHANT_ID),
         sandbox: nagad.isSandbox(),
+      },
+      rocket: {
+        enabled: Boolean(process.env.ROCKET_MERCHANT_NUMBER),
       },
       cod: { enabled: true },
     },
