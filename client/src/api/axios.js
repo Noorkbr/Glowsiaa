@@ -3,9 +3,12 @@ import axios from 'axios'
 // In production set VITE_API_URL=https://glowsiaa-production.up.railway.app
 // in Railway client environment variables.
 // In local dev the Vite proxy handles /api → localhost:5000 automatically.
+// Falls back to the known production backend when the env var is not set at build time.
 const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
-  : '/api'
+  : import.meta.env.DEV
+    ? '/api'                                                 // Vite dev-server proxy
+    : 'https://glowsiaa-production.up.railway.app/api'      // production fallback
 
 const api = axios.create({ baseURL: BASE_URL })
 
