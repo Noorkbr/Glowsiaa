@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import api from '../../api/axios'
 import Reveal from '../ui/Reveal'
 import ProductCard from '../product/ProductCard'
+import { useRealtime } from '../../context/RealtimeContext'
 
 const SkeletonCard = () => (
   <div className="animate-pulse overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -21,6 +22,7 @@ const SkeletonCard = () => (
 export default function FeaturedProducts() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const productsKey = useRealtime('products')   // re-fetches when admin saves products
 
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
@@ -36,7 +38,7 @@ export default function FeaturedProducts() {
       }
     }
     fetchFeaturedProducts()
-  }, [])
+  }, [productsKey])
 
   return (
     <section className="relative px-4 py-24 sm:px-6 lg:px-8">

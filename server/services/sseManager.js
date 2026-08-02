@@ -1,38 +1,33 @@
 /**
- * SSE Manager
- * Keeps track of all connected client tabs and broadcasts
- * new settings the instant the admin saves — zero polling needed.
+ * SSE Manager — Global real-time event bus.
+ * Every connected client tab gets pushed events the instant any admin save occurs.
+ *
+ * Event types: settings | banners | products | categories | tips | coupons
  */
 
 const clients = new Set();
 
-/** Register a new SSE response stream */
-function addClient(res) {
-  clients.add(res);
-}
+function addClient(res)    { clients.add(res); }
+function removeClient(res) { clients.delete(res); }
+function clientCount()     { return clients.size; }
 
-/** Remove a disconnected stream */
-function removeClient(res) {
-  clients.delete(res);
-}
-
-/** Push settings to every connected tab right now */
-function broadcast(settings) {
+/**
+ * Broadcast a typed SSE event to every connected tab.
+ * @param {string} type - event name (settings | banners | products | categories | tips | coupons)
+ * @param {object} data - payload sent as JSON
+ */
+function broadcastEvent(type, data = {}) {
   if (clients.size === 0) return;
-  const payload = `data: ${JSON.stringify(settings)}\n\n`;
+  const payload = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+  let sent = 0;
   for (const res of clients) {
-    try {
-      res.write(payload);
-    } catch {
-      clients.delete(res); // remove dead connections
-    }
+    try   { res.write(payload); sent++; }
+    catch { clients.delete(res); }
   }
-  console.log(`📡  SSE: broadcast settings to ${clients.size} connected tab(s)`);
+  if (sent > 0) console.log(`📡  SSE [${type}] → ${sent} tab(s)`);
 }
 
-function clientCount() {
-  return clients.size;
-}
+/** Convenience alias — keeps settings.js backward compatible */
+const broadcast = (data) => broadcastEvent('settings', data);
 
-module.exports = { addClient, removeClient, broadcast, clientCount };
-
+module.exports = { addClient, removeClient, broadcastEvent, broadcast, clientCount };

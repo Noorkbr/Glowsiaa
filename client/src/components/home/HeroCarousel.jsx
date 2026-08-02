@@ -3,6 +3,7 @@ import { ArrowRight, Play, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '../../api/axios'
 import MagneticButton from '../ui/MagneticButton'
+import { useRealtime } from '../../context/RealtimeContext'
 
 const DEFAULT = {
   headline: ['Glow', 'Like Never', 'Before'],
@@ -134,6 +135,7 @@ export default function HeroCarousel() {
   const [banners, setBanners] = useState([])
   const [current, setCurrent] = useState(0)
   const sectionRef = useRef(null)
+  const bannersKey = useRealtime('banners')   // re-fetches when admin saves banners
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] })
   const blobY = useTransform(scrollYProgress, [0, 1], ['0%', '28%'])
   const textY = useTransform(scrollYProgress, [0, 1], ['0%', '-10%'])
@@ -142,7 +144,7 @@ export default function HeroCarousel() {
     api.get('/banners', { params: { type: 'hero' } })
       .then(({ data }) => { if (data.banners?.length > 0) setBanners(data.banners) })
       .catch(() => {})
-  }, [])
+  }, [bannersKey])
   useEffect(() => {
     if (banners.length <= 1) return
     const t = setInterval(() => setCurrent(c => (c + 1) % banners.length), 6000)

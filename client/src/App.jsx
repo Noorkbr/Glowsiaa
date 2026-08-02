@@ -3,7 +3,8 @@ import { Toaster } from 'react-hot-toast'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
-import { SiteSettingsProvider } from './context/SiteSettingsContext'
+import { SiteSettingsProvider, useSiteSettings } from './context/SiteSettingsContext'
+import { RealtimeProvider } from './context/RealtimeContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { WishlistProvider } from './context/WishlistContext'
 import LoadingBar from './components/ui/LoadingBar'
@@ -52,10 +53,17 @@ function AnimatedRoutes() {
   )
 }
 
+// Inner component so it can call useSiteSettings() inside SiteSettingsProvider
+function RealtimeGate({ children }) {
+  const { applySettings } = useSiteSettings()
+  return <RealtimeProvider onSettings={applySettings}>{children}</RealtimeProvider>
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <SiteSettingsProvider>
+        <RealtimeGate>
       <AuthProvider>
         <WishlistProvider>
           <CartProvider>
@@ -86,6 +94,7 @@ export default function App() {
           </CartProvider>
         </WishlistProvider>
       </AuthProvider>
+        </RealtimeGate>
       </SiteSettingsProvider>
     </ThemeProvider>
   )

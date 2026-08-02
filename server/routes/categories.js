@@ -4,6 +4,7 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { protect, adminOnly } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
+const sse = require('../services/sseManager');
 
 const router = express.Router();
 const rl = createRateLimit({ windowMs: 15 * 60 * 1000, max: 400, message: 'Too many category requests' });
@@ -92,6 +93,7 @@ router.post('/', rl, protect, adminOnly, async (req, res, next) => {
       isActive: req.body.isActive !== undefined ? req.body.isActive : true,
       order: req.body.order || 0,
     });
+    sse.broadcastEvent('categories', { action: 'create' });
     res.status(201).json({ success: true, category });
   } catch (e) { next(e); }
 });
@@ -124,7 +126,7 @@ router.put('/:id', rl, protect, adminOnly, async (req, res, next) => {
 
     const category = await Category.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
     if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
-
+    sse.broadcastEvent('categories', { action: 'update' });
     res.json({ success: true, category });
   } catch (e) { next(e); }
 });
@@ -141,7 +143,7 @@ router.delete('/:id', rl, protect, adminOnly, async (req, res, next) => {
     // Delete subcategories too
     await Category.deleteMany({ parent: req.params.id });
     await cat.deleteOne();
-
+    sse.broadcastEvent('categories', { action: 'delete' });
     res.json({ success: true, message: 'Category deleted' });
   } catch (e) { next(e); }
 });

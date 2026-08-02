@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { protect, adminOnly } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
+const sse = require('../services/sseManager');
 
 const router = express.Router();
 
@@ -76,6 +77,7 @@ router.get('/:id', productRateLimit, async (req, res, next) => {
 router.post('/', productRateLimit, protect, adminOnly, async (req, res, next) => {
   try {
     const product = await Product.create(pickProductFields(req.body));
+    sse.broadcastEvent('products', { action: 'create' });
     res.status(201).json({ success: true, product });
   } catch (error) {
     next(error);
@@ -100,6 +102,7 @@ router.put('/:id', productRateLimit, protect, adminOnly, async (req, res, next) 
     });
 
     await product.save();
+    sse.broadcastEvent('products', { action: 'update' });
     res.json({ success: true, product });
   } catch (error) {
     next(error);
@@ -119,6 +122,7 @@ router.delete('/:id', productRateLimit, protect, adminOnly, async (req, res, nex
     }
 
     await product.deleteOne();
+    sse.broadcastEvent('products', { action: 'delete' });
     res.json({ success: true, message: 'Product deleted' });
   } catch (error) {
     next(error);

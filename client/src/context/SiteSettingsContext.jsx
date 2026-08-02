@@ -3,14 +3,6 @@ import api from '../api/axios'
 
 const SiteSettingsContext = createContext(null)
 
-// Derive the SSE URL from the same base the axios instance uses.
-// Works in both local dev (Vite proxy → /api) and production (full URL).
-const SSE_URL = (import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
-  : import.meta.env.DEV
-    ? '/api'
-    : 'https://glowsiaa-production.up.railway.app/api'
-) + '/settings/events'
 
 export const DEFAULTS = {
   logo_url: '',
@@ -113,7 +105,11 @@ export function SiteSettingsProvider({ children }) {
     }
   }, [fetchSettings, applySettings])
 
-  const value = useMemo(() => ({ settings, loading, refresh: fetchSettings }), [settings, loading, fetchSettings])
+  // applySettings is exposed so RealtimeProvider can push live settings via SSE
+  const value = useMemo(
+    () => ({ settings, loading, refresh: fetchSettings, applySettings }),
+    [settings, loading, fetchSettings, applySettings]
+  )
   return <SiteSettingsContext.Provider value={value}>{children}</SiteSettingsContext.Provider>
 }
 
