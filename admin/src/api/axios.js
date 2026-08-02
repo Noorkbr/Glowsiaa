@@ -24,9 +24,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && window.location.pathname !== '/login') {
+    const status = error.response?.status;
+    // 401 = token missing/invalid/expired, 403 = not admin → force re-login
+    if ((status === 401 || status === 403) && window.location.pathname !== '/login') {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
+      localStorage.removeItem('adminStoreSettings');
       window.location.href = '/login';
     }
 

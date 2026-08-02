@@ -112,25 +112,12 @@ router.get('/', rl, protect, adminOnly, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Admin: update one setting
-router.put('/:key', rl, protect, adminOnly, async (req, res, next) => {
-  try {
-    const { value } = req.body;
-    const setting = await SiteSetting.findOneAndUpdate(
-      { key: req.params.key },
-      { key: req.params.key, value, updatedAt: new Date() },
-      { upsert: true, new: true }
-    );
-    res.json({ success: true, setting });
-  } catch (e) { next(e); }
-});
-
-// Admin: bulk update settings
+// Admin: bulk update settings  ← must be defined BEFORE /:key to avoid shadowing
 router.put('/', rl, protect, adminOnly, async (req, res, next) => {
   try {
     const { settings } = req.body;
-    if (!settings || typeof settings !== 'object')
-      return res.status(400).json({ success: false, message: 'settings object is required' });
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings))
+      return res.status(400).json({ success: false, message: 'settings must be a plain object' });
 
     const ops = Object.entries(settings).map(([key, value]) => ({
       updateOne: {
@@ -140,7 +127,8 @@ router.put('/', rl, protect, adminOnly, async (req, res, next) => {
       },
     }));
 
-    await SiteSetting.bulkWrite(ops);
+    // Guard: bulkWrite throws if ops array is empty
+    if (ops.length > 0) await SiteSetting.bulkWrite(ops);
 
     // Push updated settings to every open client tab via SSE immediately
     const PUBLIC_KEYS = [
@@ -168,6 +156,19 @@ router.put('/', rl, protect, adminOnly, async (req, res, next) => {
     }
 
     res.json({ success: true, message: 'Settings updated' });
+  } catch (e) { next(e); }
+});
+
+// Admin: update one setting by key  ← after bulk route so '/' is not shadowed
+router.put('/:key', rl, protect, adminOnly, async (req, res, next) => {
+  try {
+    const { value } = req.body;
+    const setting = await SiteSetting.findOneAndUpdate(
+      { key: req.params.key },
+      { key: req.params.key, value, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, setting });
   } catch (e) { next(e); }
 });
 
