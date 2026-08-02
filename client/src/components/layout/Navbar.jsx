@@ -4,10 +4,35 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
-import { useLanguage } from '../../context/LanguageContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useWishlist } from '../../context/WishlistContext'
+import { useLanguage } from '../../context/LanguageContext'
 import SearchModal from './SearchModal'
+
+const NavLink = ({ to, label, isActive }) => (
+  <Link to={to} className="relative px-1 py-0.5 text-sm font-medium group">
+    <span className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/55 group-hover:text-white'}`}>
+      {label}
+    </span>
+    {isActive && (
+      <motion.div layoutId="nav-indicator"
+        className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full bg-glow-magenta"
+        style={{ boxShadow: '0 0 8px rgba(213,16,110,0.8)' }} />
+    )}
+  </Link>
+)
+
+const Badge = ({ count }) => (
+  <AnimatePresence>
+    {count > 0 && (
+      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+        className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-glow-magenta px-1 text-[10px] font-black text-white"
+        style={{ boxShadow: '0 0 10px rgba(213,16,110,0.7)' }}>
+        {count}
+      </motion.span>
+    )}
+  </AnimatePresence>
+)
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -16,7 +41,7 @@ export default function Navbar() {
   const { wishlistCount } = useWishlist()
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
-  const { lang, toggleLang, t } = useLanguage()
+  const { lang, toggleLang } = useLanguage()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -24,9 +49,9 @@ export default function Navbar() {
   const userRef = useRef(null)
 
   const navLinks = [
-    { label: t('home'),     to: '/' },
-    { label: t('products'), to: '/products' },
-    { label: t('track'),    to: '/orders' },
+    { label: lang === 'bn' ? 'হোম' : 'Home',     to: '/' },
+    { label: lang === 'bn' ? 'পণ্য' : 'Products', to: '/products' },
+    { label: lang === 'bn' ? 'ট্র্যাক' : 'Track', to: '/orders' },
   ]
 
   useEffect(() => {
@@ -51,9 +76,7 @@ export default function Navbar() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="sticky top-0 z-50 transition-all duration-500"
         style={{
-          background: scrolled
-            ? 'rgba(5,5,10,0.82)'
-            : 'rgba(5,5,10,0.25)',
+          background: scrolled ? 'rgba(5,5,10,0.82)' : 'rgba(5,5,10,0.25)',
           backdropFilter: scrolled ? 'blur(28px) saturate(1.8)' : 'blur(12px)',
           WebkitBackdropFilter: scrolled ? 'blur(28px) saturate(1.8)' : 'blur(12px)',
           borderBottom: scrolled ? '1px solid rgba(213,16,110,0.12)' : '1px solid rgba(255,255,255,0.05)',
@@ -61,13 +84,11 @@ export default function Navbar() {
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
-          {/* Mobile hamburger */}
           <button type="button" onClick={() => setMenuOpen(v => !v)}
             className="rounded-full border border-white/10 p-2 text-white/70 transition hover:border-white/20 hover:bg-white/5 md:hidden">
             {menuOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
 
-          {/* Desktop: Logo + Nav */}
           <div className="hidden items-center gap-8 md:flex">
             <Link to="/" className="font-heading text-2xl font-black tracking-[0.32em]"
               style={{ background: 'linear-gradient(135deg, #D5106E, #9B2FD0, #6E3992)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -78,30 +99,25 @@ export default function Navbar() {
             </nav>
           </div>
 
-          {/* Mobile: logo */}
           <Link to="/" className="font-heading text-2xl font-black tracking-[0.32em] md:hidden"
             style={{ background: 'linear-gradient(135deg, #D5106E, #9B2FD0, #6E3992)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             GLOWSIAA
           </Link>
 
-          {/* Right Icons */}
           <div className="flex items-center gap-1">
-            {/* Language Toggle */}
+            {/* Language toggle — EN ↔ বাং */}
             <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }}
               onClick={toggleLang}
-              title={lang === 'en' ? 'Switch to Bangla' : 'Switch to English'}
               className="rounded-full border border-white/15 px-2.5 py-1 text-xs font-bold text-white/70 transition hover:border-glow-magenta/40 hover:text-white">
               {lang === 'en' ? 'বাং' : 'EN'}
             </motion.button>
 
-            {/* Search */}
             <motion.button type="button" whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
               onClick={() => setSearchOpen(true)}
               className="rounded-full p-2 text-white/65 transition hover:bg-white/5 hover:text-white">
               <Search size={19} />
             </motion.button>
 
-            {/* Theme */}
             <motion.button type="button" whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
               className="rounded-full p-2 text-white/65 transition hover:bg-white/5 hover:text-white">
@@ -116,7 +132,6 @@ export default function Navbar() {
               </AnimatePresence>
             </motion.button>
 
-            {/* Wishlist */}
             <motion.button type="button" whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/wishlist')}
               className="relative rounded-full p-2 text-white/65 transition hover:bg-white/5 hover:text-white">
@@ -124,7 +139,6 @@ export default function Navbar() {
               <Badge count={wishlistCount} />
             </motion.button>
 
-            {/* Cart */}
             <motion.button type="button" whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
               onClick={openDrawer}
               className="relative rounded-full p-2 text-white/65 transition hover:bg-white/5 hover:text-white">
@@ -132,7 +146,6 @@ export default function Navbar() {
               <Badge count={cartCount} />
             </motion.button>
 
-            {/* User */}
             {user ? (
               <div ref={userRef} className="relative">
                 <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}
@@ -153,11 +166,11 @@ export default function Navbar() {
                       <div className="p-2">
                         <button type="button" onClick={() => navigate('/account')}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/5 hover:text-white">
-                          <Package size={15} /> {t('myOrders')}
+                          <Package size={15} /> {lang === 'bn' ? 'আমার অর্ডার' : 'My Orders'}
                         </button>
                         <button type="button" onClick={() => { logout(); navigate('/') }}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 transition hover:bg-red-500/10">
-                          <LogOut size={15} /> {t('logout')}
+                          <LogOut size={15} /> {lang === 'bn' ? 'লগআউট' : 'Logout'}
                         </button>
                       </div>
                     </motion.div>
@@ -174,7 +187,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile menu */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
@@ -186,7 +198,9 @@ export default function Navbar() {
                     {l.label}
                   </Link>
                 ))}
-                {user && <Link to="/account" className="rounded-xl px-3 py-3 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white">{t('account')}</Link>}
+                {user && <Link to="/account" className="rounded-xl px-3 py-3 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white">
+                  {lang === 'bn' ? 'অ্যাকাউন্ট' : 'Account'}
+                </Link>}
               </nav>
             </motion.div>
           )}
@@ -197,27 +211,4 @@ export default function Navbar() {
     </>
   )
 }
-
-const NavLink = ({ to, label, isActive }) => (
-  <Link to={to} className="relative px-1 py-0.5 text-sm font-medium group">
-    <span className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/55 group-hover:text-white'}`}>{label}</span>
-    {isActive && (
-      <motion.div layoutId="nav-indicator"
-        className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full bg-glow-magenta"
-        style={{ boxShadow: '0 0 8px rgba(213,16,110,0.8)' }} />
-    )}
-  </Link>
-)
-
-const Badge = ({ count }) => (
-  <AnimatePresence>
-    {count > 0 && (
-      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-        className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-glow-magenta px-1 text-[10px] font-black text-white"
-        style={{ boxShadow: '0 0 10px rgba(213,16,110,0.7)' }}>
-        {count}
-      </motion.span>
-    )}
-  </AnimatePresence>
-)
 

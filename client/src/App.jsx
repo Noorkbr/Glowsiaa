@@ -43,36 +43,36 @@ function AnimatedRoutes() {
           <Route path="/orders/:orderId" element={<OrderTrackingPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/payment/success" element={<PaymentCallbackPage />} />
-            <Route path="/payment/failed" element={<PaymentCallbackPage />} />
-            <Route path="/payment/cancelled" element={<PaymentCallbackPage />} />
-            <Route path="*" element={<NotFoundPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/payment/success" element={<PaymentCallbackPage />} />
+          <Route path="/payment/failed" element={<PaymentCallbackPage />} />
+          <Route path="/payment/cancelled" element={<PaymentCallbackPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
   )
 }
 
-// Inner component so it can call useSiteSettings() inside SiteSettingsProvider
 function RealtimeGate({ children }) {
   const { applySettings } = useSiteSettings()
   return <RealtimeProvider onSettings={applySettings}>{children}</RealtimeProvider>
 }
 
-// Error boundary — shows error message instead of blank page on any crash
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
   static getDerivedStateFromError(error) { return { error } }
+  componentDidCatch(error, info) { console.error('App error:', error, info) }
   render() {
     if (this.state.error) {
       return (
-        <div style={{ minHeight: '100vh', background: '#05050A', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'sans-serif' }}>
-          <p style={{ color: '#D5106E', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>⚠️ Glowsiaa</p>
-          <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>Something went wrong. Please refresh the page.</p>
-          <pre style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', maxWidth: '600px', overflow: 'auto' }}>{this.state.error?.message}</pre>
-          <button onClick={() => window.location.reload()} style={{ marginTop: '1.5rem', background: '#D5106E', color: '#fff', border: 'none', borderRadius: '9999px', padding: '0.75rem 2rem', cursor: 'pointer', fontWeight: 'bold' }}>Refresh</button>
+        <div style={{ minHeight:'100vh', background:'#05050A', color:'#fff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'2rem', fontFamily:'monospace' }}>
+          <p style={{ color:'#D5106E', fontSize:'1.2rem', fontWeight:'bold', marginBottom:'1rem' }}>⚠️ Glowsiaa Error</p>
+          <pre style={{ color:'#ff6b6b', fontSize:'0.8rem', maxWidth:'700px', overflow:'auto', background:'rgba(255,0,0,0.1)', padding:'1rem', borderRadius:'8px', whiteSpace:'pre-wrap', marginBottom:'1rem' }}>
+            {this.state.error?.toString()}
+          </pre>
+          <button onClick={() => window.location.reload()} style={{ background:'#D5106E', color:'#fff', border:'none', borderRadius:'9999px', padding:'0.75rem 2rem', cursor:'pointer', fontWeight:'bold' }}>Refresh</button>
         </div>
       )
     }
@@ -83,44 +83,30 @@ class ErrorBoundary extends Component {
 export default function App() {
   return (
     <ErrorBoundary>
-    <ThemeProvider>
-      <LanguageProvider>
-      <SiteSettingsProvider>
-        <RealtimeGate>
-      <AuthProvider>
-        <WishlistProvider>
-          <CartProvider>
-          <Toaster
-            position="top-right"
-            gutter={10}
-            toastOptions={{
-              duration: 2800,
-              style: {
-                background: 'rgba(5,5,10,0.95)',
-                color: '#fff',
-                border: '1px solid rgba(213,16,110,0.35)',
-                borderRadius: '16px',
-                fontSize: '0.875rem',
-                fontFamily: 'Inter, sans-serif',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(213,16,110,0.12)',
-                backdropFilter: 'blur(20px)',
-                padding: '12px 16px',
-              },
-              success: { iconTheme: { primary: '#D5106E', secondary: '#fff' } },
-            }}
-          />
-          <LoadingBar />
-          <ScrollProgress />
-          <CustomCursor />
-          <FacebookPixel />
-            <AnimatedRoutes />
-          </CartProvider>
-        </WishlistProvider>
-      </AuthProvider>
-        </RealtimeGate>
-      </SiteSettingsProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <SiteSettingsProvider>
+            <RealtimeGate>
+              <AuthProvider>
+                <WishlistProvider>
+                  <CartProvider>
+                    <Toaster position="top-right" gutter={10} toastOptions={{
+                      duration: 2800,
+                      style: { background:'rgba(5,5,10,0.95)', color:'#fff', border:'1px solid rgba(213,16,110,0.35)', borderRadius:'16px', fontSize:'0.875rem', fontFamily:'Inter, sans-serif', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', backdropFilter:'blur(20px)', padding:'12px 16px' },
+                      success: { iconTheme: { primary:'#D5106E', secondary:'#fff' } },
+                    }} />
+                    <LoadingBar />
+                    <ScrollProgress />
+                    <CustomCursor />
+                    <FacebookPixel />
+                    <AnimatedRoutes />
+                  </CartProvider>
+                </WishlistProvider>
+              </AuthProvider>
+            </RealtimeGate>
+          </SiteSettingsProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }
