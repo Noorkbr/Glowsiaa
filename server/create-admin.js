@@ -20,8 +20,14 @@ const connectDB = async () => {
     console.error('❌  MONGO_URI is not set in server/.env');
     process.exit(1);
   }
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('✅  Connected to MongoDB');
+  // Apply the same DB-name normalisation as server.js so both scripts
+  // always target the "glowsiaa" database, never the default "test" DB.
+  const rawUri = process.env.MONGO_URI.trim().replace(/\r/g, '');
+  const uri = rawUri.includes('/glowsiaa?') || rawUri.includes('/glowsiaa&') || rawUri.endsWith('/glowsiaa')
+    ? rawUri
+    : rawUri.replace(/\/(\?|$)/, '/glowsiaa$1');
+  await mongoose.connect(uri);
+  console.log('✅  Connected to MongoDB (database: glowsiaa)');
 };
 
 const showAdminInfo = async () => {
