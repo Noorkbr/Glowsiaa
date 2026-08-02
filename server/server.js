@@ -6,33 +6,32 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 const path = require('path');
 
-const authRoutes = require('./routes/auth');
+const authRoutes    = require('./routes/auth');
 const productRoutes = require('./routes/products');
-const orderRoutes = require('./routes/orders');
-const adminRoutes = require('./routes/admin');
-const bannerRoutes = require('./routes/banners');
-const tipRoutes = require('./routes/tips');
+const orderRoutes   = require('./routes/orders');
+const adminRoutes   = require('./routes/admin');
+const bannerRoutes  = require('./routes/banners');
+const tipRoutes     = require('./routes/tips');
 const settingRoutes = require('./routes/settings');
-const couponRoutes = require('./routes/coupons');
+const couponRoutes  = require('./routes/coupons');
 const paymentRoutes = require('./routes/payments');
 const categoryRoutes = require('./routes/categories');
-const uploadRoutes = require('./routes/uploads');
+const uploadRoutes  = require('./routes/uploads');
+const sse           = require('./services/sseManager');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 mongoose.set('sanitizeFilter', true);
 
-// Parse allowed origins — trim each entry and ignore leading/trailing spaces
+// Parse allowed origins
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
   : [];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, server-to-server)
     if (!origin) return callback(null, true);
-    // If no ALLOWED_ORIGINS configured, allow everything (dev / first deploy)
     if (allowedOrigins.length === 0) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error(`CORS: origin ${origin} not allowed`));
@@ -43,9 +42,23 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// ─── Global body sanitiser ──────────────────────────────────────────────────
+// Strip immutable MongoDB fields from every PUT / PATCH body.
+// This prevents CastErrors ("Invalid resource identifier") caused by
+// the frontend accidentally sending _id, __v or createdAt in update payloads.
+app.use((req, res, next) => {
+  if ((req.method === 'PUT' || req.method === 'PATCH') && req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
+    delete req.body._id;
+    delete req.body.__v;
+    delete req.body.createdAt;
+    delete req.body.updatedAt;
+  }
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Root route — useful health check when visiting the Railway URL directly
+// Root health check
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -53,7 +66,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     status: 'running',
     timestamp: new Date(),
-    endpoints: '/health  |  /api/products  |  /api/orders  |  /api/auth  |  /api/settings/public',
+    endpoints: '/health  |  /api/products  |  /api/orders  |  /api/auth  |  /api/settings/public  |  /api/events',
   });
 });
 
@@ -61,17 +74,35 @@ app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Glowsiaa API is running', timestamp: new Date() });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/banners', bannerRoutes);
-app.use('/api/tips', tipRoutes);
-app.use('/api/settings', settingRoutes);
-app.use('/api/coupons', couponRoutes);
-app.use('/api/payments', paymentRoutes);
+// ─── Global SSE endpoint ────────────────────────────────────────────────────
+// All client tabs connect here for real-time updates across ALL resource types.
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable Nginx/Railway buffering
+  res.flushHeaders();
+
+  // Heartbeat every 25 s to keep the connection alive through proxies
+  const heartbeat = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch { clearInterval(heartbeat); }
+  }, 25_000);
+
+  sse.addClient(res);
+  req.on('close', () => { clearInterval(heartbeat); sse.removeClient(res); });
+});
+
+app.use('/api/auth',       authRoutes);
+app.use('/api/products',   productRoutes);
+app.use('/api/orders',     orderRoutes);
+app.use('/api/admin',      adminRoutes);
+app.use('/api/banners',    bannerRoutes);
+app.use('/api/tips',       tipRoutes);
+app.use('/api/settings',   settingRoutes);
+app.use('/api/coupons',    couponRoutes);
+app.use('/api/payments',   paymentRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/uploads', uploadRoutes);
+app.use('/api/uploads',    uploadRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
