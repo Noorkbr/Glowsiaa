@@ -39,7 +39,11 @@ router.put('/:id', rl, protect, adminOnly, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id))
       return res.status(400).json({ success: false, message: 'Invalid ID' });
-    const tip = await Tip.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+    // Strip immutable fields that must never be in an update payload
+    const { _id, __v, createdAt, updatedAt, ...safeBody } = req.body;
+
+    const tip = await Tip.findByIdAndUpdate(req.params.id, safeBody, { new: true, runValidators: true });
     if (!tip) return res.status(404).json({ success: false, message: 'Tip not found' });
     res.json({ success: true, tip });
   } catch (e) { next(e); }

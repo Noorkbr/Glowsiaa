@@ -1,23 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import api from '../../api/axios'
+import { useState } from 'react'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 
 export default function AnnouncementBar() {
-  const [message, setMessage] = useState('')
-  const [visible, setVisible] = useState(false)
+  const { settings } = useSiteSettings()
+  const [dismissed, setDismissed] = useState(false)
 
-  useEffect(() => {
-    api.get('/settings/public')
-      .then(({ data }) => {
-        const s = data.settings
-        if (s.announcement_active && s.announcement) {
-          setMessage(s.announcement)
-          setVisible(true)
-        }
-      })
-      .catch(() => {})
-  }, [])
+  const visible = !dismissed && settings.announcement_active && !!settings.announcement
 
   return (
     <AnimatePresence>
@@ -31,9 +21,9 @@ export default function AnnouncementBar() {
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
             <div className="flex-1 text-center text-sm font-medium text-white">
-              {message}
+              {settings.announcement}
             </div>
-            <button type="button" onClick={() => setVisible(false)}
+            <button type="button" onClick={() => setDismissed(true)}
               className="ml-4 rounded-full p-1 text-white/70 transition hover:bg-white/15 hover:text-white"
               aria-label="Dismiss announcement">
               <X size={16} />
@@ -44,4 +34,3 @@ export default function AnnouncementBar() {
     </AnimatePresence>
   )
 }
-

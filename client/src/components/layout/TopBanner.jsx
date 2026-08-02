@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import api from '../../api/axios'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 
 const DEFAULT_MSGS = [
   '✦ Free Delivery on Orders Above ৳999',
@@ -10,16 +9,10 @@ const DEFAULT_MSGS = [
 ]
 
 export default function TopBanner() {
-  const [messages, setMessages] = useState(DEFAULT_MSGS)
+  const { settings } = useSiteSettings()
 
-  useEffect(() => {
-    api.get('/settings/public')
-      .then(({ data }) => {
-        const msgs = data.settings?.top_banner_messages
-        if (Array.isArray(msgs) && msgs.length > 0) setMessages(msgs)
-      })
-      .catch(() => {})
-  }, [])
+  const raw = settings.top_banner_messages
+  const messages = Array.isArray(raw) && raw.length > 0 ? raw : DEFAULT_MSGS
 
   // Triple the messages for seamless loop
   const items = [...messages, ...messages, ...messages]

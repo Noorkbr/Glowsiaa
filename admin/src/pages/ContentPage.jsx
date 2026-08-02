@@ -65,7 +65,22 @@ export default function ContentPage() {
 
   // ─── Tips ────────────────────────────────────────────────────
   const openCreate = () => { setEditingTip(null); setForm(emptyTip); setShowModal(true); };
-  const openEdit = (t) => { setEditingTip(t); setForm({ ...emptyTip, ...t, tags: t.tags || [] }); setShowModal(true); };
+  const openEdit = (t) => {
+    setEditingTip(t);
+    // Only copy known form fields — never include _id, __v, createdAt
+    setForm({
+      title: t.title || '',
+      content: t.content || '',
+      category: t.category || 'skincare',
+      imageUrl: t.imageUrl || '',
+      emoji: t.emoji || '✨',
+      readTime: t.readTime || 2,
+      isPublished: t.isPublished !== undefined ? t.isPublished : true,
+      order: t.order || 0,
+      tags: t.tags || [],
+    });
+    setShowModal(true);
+  };
   const closeModal = () => { setShowModal(false); setEditingTip(null); };
   const handleChange = (e) => { const { name, value, type, checked } = e.target; setForm(p => ({ ...p, [name]: type === 'checkbox' ? checked : value })); };
   const handleTipSubmit = async (e) => {
