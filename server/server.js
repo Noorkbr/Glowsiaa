@@ -23,14 +23,19 @@ const PORT = process.env.PORT || 5000;
 
 mongoose.set('sanitizeFilter', true);
 
+// Parse allowed origins — trim each entry and ignore leading/trailing spaces
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:5174'];
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+  : [];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    // If no ALLOWED_ORIGINS configured, allow everything (dev / first deploy)
+    if (allowedOrigins.length === 0) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
 }));
@@ -39,6 +44,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Root route — useful health check when visiting the Railway URL directly
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    name: 'Glowsiaa API',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date(),
+    endpoints: '/health  |  /api/products  |  /api/orders  |  /api/auth  |  /api/settings/public',
+  });
+});
 
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Glowsiaa API is running', timestamp: new Date() });
