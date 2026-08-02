@@ -74,14 +74,26 @@ router.post('/login', authRateLimit, async (req, res, next) => {
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     const { password } = req.body;
 
+    console.log(`POST /api/auth/login received: email=${email}, password=${password}`);
+
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+      const message = 'Email and password are required';
+      console.log(`Login error: ${message}`);
+      return res.status(400).json({ success: false, message });
     }
 
     const user = await User.findOne(mongoose.sanitizeFilter({ email })).select('+password');
 
-    if (!user || !(await user.matchPassword(password))) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    console.log(`User found: ${user ? user.email : 'NOT FOUND'}`);
+
+    const passwordMatches = user ? await user.matchPassword(password) : false;
+
+    console.log(`Password comparison result: ${passwordMatches}`);
+
+    if (!user || !passwordMatches) {
+      const message = 'Invalid credentials';
+      console.log(`Login error: ${message}`);
+      return res.status(401).json({ success: false, message });
     }
 
     const token = signToken(user);
