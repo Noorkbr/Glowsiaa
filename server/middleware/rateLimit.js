@@ -1,5 +1,13 @@
 const buckets = new Map();
 
+// Periodically purge expired entries to prevent unbounded memory growth.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of buckets) {
+    if (val.expiresAt <= now) buckets.delete(key);
+  }
+}, 60_000); // run every 60 seconds
+
 const createRateLimit = ({ windowMs, max, message }) => (req, res, next) => {
   const now = Date.now();
   const key = `${req.ip}:${req.baseUrl}:${req.path}`;

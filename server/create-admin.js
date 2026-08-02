@@ -2,17 +2,16 @@
  * Glowsiaa — Admin Credential Manager
  * =====================================
  * Usage:
- *   node create-admin.js                        → shows current admin info
- *   node create-admin.js reset                  → resets password to "admin123"
- *   node create-admin.js reset MyNewPassword99  → resets to a custom password
- *   node create-admin.js create admin@email.com Password123
+ *   node create-admin.js                                    → list admin accounts
+ *   node create-admin.js create <email> <password>          → create new admin
+ *   node create-admin.js reset <password>                   → reset FIRST admin's password
+ *   node create-admin.js set-password <email> <password>    → reset a specific admin's password
  *
  * Run from the /server directory with your .env configured.
  */
 
 require('dotenv').config();
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 
 const connectDB = async () => {
@@ -33,27 +32,55 @@ const connectDB = async () => {
 const showAdminInfo = async () => {
   const admins = await User.find({ role: 'admin' }).select('name email createdAt');
   if (admins.length === 0) {
-    console.log('⚠️  No admin accounts found. Run: node create-admin.js create admin@glowsiaa.com YourPassword');
+    console.log('⚠️  No admin accounts found.');
+    console.log('   Run: node create-admin.js create admin@glowsiaa.com YourPassword');
   } else {
     console.log(`\n👑  Found ${admins.length} admin account(s):\n`);
     admins.forEach((a) => console.log(`   📧  ${a.email}  (name: ${a.name}, created: ${a.createdAt.toDateString()})`));
   }
 };
 
-const resetAdminPassword = async (newPassword = 'admin123') => {
+// Reset first admin found (kept for backward compat)
+const resetAdminPassword = async (newPassword = 'Admin@1234') => {
   if (newPassword.length < 6) {
     console.error('❌  Password must be at least 6 characters.');
     process.exit(1);
   }
   const admin = await User.findOne({ role: 'admin' }).select('+password');
   if (!admin) {
-    console.error('❌  No admin account found. Create one first with: node create-admin.js create email@example.com Password123');
+    console.error('❌  No admin account found. Create one first:');
+    console.error('   node create-admin.js create admin@glowsiaa.com YourPassword');
     process.exit(1);
   }
-  const salt = await bcrypt.genSalt(10);
-  admin.password = await bcrypt.hash(newPassword, salt);
-  await admin.save({ validateBeforeSave: false });
+  // Assign plain text — the mongoose pre("save") hook in User.js bcrypt-hashes it.
+  // Do NOT call bcrypt.hash() here; that would cause double-hashing and break login.
+  admin.password = newPassword;
+  await admin.save();
   console.log(`\n✅  Password reset for ${admin.email}`);
+  console.log(`   New password: ${newPassword}`);
+  console.log('\n   ⚠️  Change this password after your first login!');
+};
+
+// Reset a specific admin by email
+const setPasswordByEmail = async (email, newPassword) => {
+  if (!email || !newPassword) {
+    console.error('❌  Usage: node create-admin.js set-password <email> <password>');
+    process.exit(1);
+  }
+  if (newPassword.length < 6) {
+    console.error('❌  Password must be at least 6 characters.');
+    process.exit(1);
+  }
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  if (!user) {
+    console.error(`❌  No user found with email: ${email}`);
+    process.exit(1);
+  }
+  // Assign plain text — pre-save hook hashes it correctly.
+  user.password = newPassword;
+  user.role = 'admin'; // ensure admin role
+  await user.save();
+  console.log(`\n✅  Password updated for ${user.email}`);
   console.log(`   New password: ${newPassword}`);
   console.log('\n   ⚠️  Change this password after your first login!');
 };
@@ -67,11 +94,13 @@ const createAdminUser = async (email, password) => {
     console.error('❌  Password must be at least 6 characters.');
     process.exit(1);
   }
-  const existing = await User.findOne({ email: email.toLowerCase() });
+  const existing = await User.findOne({ email: email.toLowerCase() }).select('+password');
   if (existing) {
+    // Update both role AND password so existing plain-text passwords are fixed too.
     existing.role = 'admin';
+    existing.password = password; // pre-save hook will hash it
     await existing.save();
-    console.log(`\n✅  Existing user ${email} promoted to admin.`);
+    console.log(`\n✅  Existing user ${email} promoted to admin with new password.`);
   } else {
     await User.create({ name: 'Admin', email: email.toLowerCase(), password, role: 'admin' });
     console.log(`\n✅  Admin account created: ${email}`);
@@ -85,7 +114,10 @@ const run = async () => {
 
     switch (command) {
       case 'reset':
-        await resetAdminPassword(arg1 || 'admin123');
+        await resetAdminPassword(arg1 || 'Admin@1234');
+        break;
+      case 'set-password':
+        await setPasswordByEmail(arg1, arg2);
         break;
       case 'create':
         await createAdminUser(arg1, arg2);
@@ -93,13 +125,13 @@ const run = async () => {
       default:
         await showAdminInfo();
         console.log(`
-──────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────
 Available commands:
-  node create-admin.js                           List admin accounts
-  node create-admin.js reset                     Reset password → "admin123"
-  node create-admin.js reset <NewPassword>       Reset to custom password
-  node create-admin.js create <email> <pass>     Create new admin account
-──────────────────────────────────────────────`);
+  node create-admin.js                                List admin accounts
+  node create-admin.js create <email> <pass>          Create / promote to admin
+  node create-admin.js reset <pass>                   Reset FIRST admin password
+  node create-admin.js set-password <email> <pass>    Reset a specific admin password
+──────────────────────────────────────────────────────────────────`);
     }
   } catch (err) {
     console.error('❌  Error:', err.message);
@@ -110,4 +142,3 @@ Available commands:
 };
 
 run();
-
