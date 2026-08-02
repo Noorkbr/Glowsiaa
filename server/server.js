@@ -87,9 +87,25 @@ app.use((err, req, res, next) => {
 
 const startServer = async () => {
   try {
-    if (!process.env.MONGO_URI) throw new Error('MONGO_URI is not defined');
+    if (!process.env.MONGO_URI) throw new Error('MONGO_URI is not defined in environment variables');
 
-    await mongoose.connect(process.env.MONGO_URI);
+    // Sanitize: strip any stray whitespace / Windows CR that .env editors may add
+    const rawUri = process.env.MONGO_URI.trim().replace(/\r/g, '');
+
+    // Ensure database name "glowsiaa" is in the URI path (required for proper auth scope)
+    const uri = rawUri.includes('/glowsiaa?') || rawUri.includes('/glowsiaa&')
+      ? rawUri
+      : rawUri.replace(/\/(\?|$)/, '/glowsiaa$1');
+
+    // Mask credentials in logs for security
+    const maskedUri = uri.replace(/:\/\/([^:]+):([^@]+)@/, '://<user>:****@');
+    console.log(`🔗 Connecting to MongoDB: ${maskedUri}`);
+
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      family: 4, // force IPv4 — avoids IPv6 DNS issues on some hosts
+    });
     console.log('✅ MongoDB connected');
     mongoose.connection.on('error', (e) => console.error('MongoDB error:', e.message));
 
@@ -127,6 +143,13 @@ const startServer = async () => {
 
   } catch (error) {
     console.error('❌ Failed to start:', error.message);
+    if (error.message.includes('bad auth') || error.message.includes('authentication failed')) {
+      console.error('   ↳ MongoDB authentication failed. Check your MONGO_URI:');
+      console.error('     1. Username & password are correct in Railway Variables');
+      console.error('     2. Password special chars are URL-encoded (@ → %40, # → %23, ! → %21)');
+      console.error('     3. MongoDB Atlas Network Access allows 0.0.0.0/0 (all IPs)');
+      console.error('     4. The DB user has readWrite role on the "glowsiaa" database');
+    }
     process.exit(1);
   }
 };
