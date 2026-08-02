@@ -57,7 +57,7 @@ function HeadlineReveal({ lines }) {
   )
 }
 
-function ParallaxProduct({ imageUrl, alt = 'Product' }) {
+function ParallaxProduct({ imageUrl, alt = 'Product', productLabel, productName, productPrice }) {
   const containerRef = useRef(null)
   const rafId = useRef(null)
   const rx = useMotionValue(0)
@@ -108,13 +108,13 @@ function ParallaxProduct({ imageUrl, alt = 'Product' }) {
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.4 }}
           style={{ transform: 'translateZ(40px)' }}>
           <p className="text-[10px] uppercase tracking-[0.25em] text-white/50">
-            {settings.hero_product_label || 'Trending'}
+            {productLabel || 'Trending'}
           </p>
           <p className="mt-0.5 text-sm font-bold text-white">
-            {settings.hero_product_name || 'Vitamin C Serum'}
+            {productName || 'Vitamin C Serum'}
           </p>
           <p className="text-xs text-glow-magenta font-semibold mt-0.5">
-            ৳{settings.hero_product_price || '1,450'}
+            ৳{productPrice || '1,450'}
           </p>
         </motion.div>
         <motion.div className="absolute -right-3 -top-3 rounded-full bg-glow-magenta p-2"
@@ -232,7 +232,12 @@ export default function HeroCarousel() {
         <motion.div initial={{ opacity: 0, scale: 0.84 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
           className="flex justify-center order-1 lg:order-2">
-          <ParallaxProduct imageUrl={content.imageUrl} />
+          <ParallaxProduct
+            imageUrl={content.imageUrl}
+            productLabel={settings.hero_product_label || 'Trending'}
+            productName={settings.hero_product_name || 'Vitamin C Serum'}
+            productPrice={settings.hero_product_price || '1,450'}
+          />
         </motion.div>
       </div>
 
