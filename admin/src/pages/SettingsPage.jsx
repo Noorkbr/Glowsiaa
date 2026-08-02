@@ -204,6 +204,39 @@ export default function SettingsPage() {
             </Field>
           </div>
 
+          {/* Hero Product Card */}
+          <div className="panel p-6 space-y-5 lg:col-span-2">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-glow-magenta/15 text-glow-magenta">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Hero Product Showcase Card</h2>
+                <p className="text-xs text-gray-400">The floating product card shown on the hero section (currently shows "Vitamin C Serum")</p>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Product Name (English)">
+                <Input name="hero_product_name" value={form.hero_product_name || ''} onChange={handleChange} placeholder="Vitamin C Serum" />
+              </Field>
+              <Field label="Product Name (বাংলা)">
+                <Input name="hero_product_name_bn" value={form.hero_product_name_bn || ''} onChange={handleChange} placeholder="ভিটামিন সি সিরাম" />
+              </Field>
+              <Field label="Price (৳)">
+                <Input name="hero_product_price" value={form.hero_product_price || ''} onChange={handleChange} placeholder="1,450" />
+              </Field>
+              <Field label="Label (e.g. Trending)">
+                <Input name="hero_product_label" value={form.hero_product_label || ''} onChange={handleChange} placeholder="Trending" />
+              </Field>
+              <Field label="Label (বাংলা)" hint="e.g. ট্রেন্ডিং">
+                <Input name="hero_product_label_bn" value={form.hero_product_label_bn || ''} onChange={handleChange} placeholder="ট্রেন্ডিং" />
+              </Field>
+              <Field label="Product Image URL" hint="Optional — overrides hero banner image">
+                <Input name="hero_product_image" value={form.hero_product_image || ''} onChange={handleChange} placeholder="https://..." />
+              </Field>
+            </div>
+          </div>
+
           <div className="panel p-6 space-y-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-glow-magenta/15 text-glow-magenta">

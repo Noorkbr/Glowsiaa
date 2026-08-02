@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '../../api/axios'
 import MagneticButton from '../ui/MagneticButton'
 import { useRealtime } from '../../context/RealtimeContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 const DEFAULT = {
   headline: ['Glow', 'Like Never', 'Before'],
@@ -106,9 +108,13 @@ function ParallaxProduct({ imageUrl, alt = 'Product' }) {
         <motion.div className="glass-magenta absolute bottom-8 left-6 rounded-2xl px-4 py-3"
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.4 }}
           style={{ transform: 'translateZ(40px)' }}>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-white/50">Trending</p>
-          <p className="mt-0.5 text-sm font-bold text-white">Vitamin C Serum</p>
-          <p className="text-xs text-glow-magenta font-semibold mt-0.5">৳1,450</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-white/50">
+            {lang === 'bn' ? (settings.hero_product_label_bn || 'ট্রেন্ডিং') : (settings.hero_product_label || t('trending'))}
+          </p>
+          <p className="mt-0.5 text-sm font-bold text-white">
+            {lang === 'bn' ? (settings.hero_product_name_bn || settings.hero_product_name || 'ভিটামিন সি সিরাম') : (settings.hero_product_name || 'Vitamin C Serum')}
+          </p>
+          <p className="text-xs text-glow-magenta font-semibold mt-0.5">৳{settings.hero_product_price || '1,450'}</p>
         </motion.div>
         <motion.div className="absolute -right-3 -top-3 rounded-full bg-glow-magenta p-2"
           animate={{ scale: [1, 1.3, 1], rotate: [0, 180, 360] }}
@@ -135,7 +141,9 @@ export default function HeroCarousel() {
   const [banners, setBanners] = useState([])
   const [current, setCurrent] = useState(0)
   const sectionRef = useRef(null)
-  const bannersKey = useRealtime('banners')   // re-fetches when admin saves banners
+  const bannersKey = useRealtime('banners')
+  const { settings } = useSiteSettings()
+  const { lang, t } = useLanguage()
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] })
   const blobY = useTransform(scrollYProgress, [0, 1], ['0%', '28%'])
   const textY = useTransform(scrollYProgress, [0, 1], ['0%', '-10%'])
@@ -198,7 +206,7 @@ export default function HeroCarousel() {
               className="btn-shimmer inline-flex items-center gap-2 rounded-full bg-glow-magenta px-7 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-white transition-transform hover:-translate-y-1 sm:px-9 sm:py-4"
               style={{ boxShadow: '0 0 40px rgba(213,16,110,0.5), 0 0 80px rgba(213,16,110,0.2)' }}
               onClick={() => window.location.href = content.buttonLink}>
-              {content.buttonText}
+              {lang === 'bn' ? 'কালেকশন দেখুন' : (content.buttonText || t('exploreCollection'))}
               <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.6, repeat: Infinity }}>
                 <ArrowRight size={16} />
               </motion.span>
@@ -207,7 +215,7 @@ export default function HeroCarousel() {
               className="glass inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-white/75 transition hover:text-white sm:px-8"
               onClick={() => document.getElementById('our-story')?.scrollIntoView({ behavior: 'smooth' })}>
               <Play size={13} className="fill-white/55" />
-              Our Story
+              {t('ourStory')}
             </MagneticButton>
           </motion.div>
 

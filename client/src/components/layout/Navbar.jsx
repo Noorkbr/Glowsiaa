@@ -4,40 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useWishlist } from '../../context/WishlistContext'
 import SearchModal from './SearchModal'
-
-const navLinks = [
-  { label: 'Home',    to: '/' },
-  { label: 'Products', to: '/products' },
-  { label: 'Track',   to: '/orders' },
-]
-
-const NavLink = ({ to, label, isActive }) => (
-  <Link to={to} className="relative px-1 py-0.5 text-sm font-medium group">
-    <span className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/55 group-hover:text-white'}`}>
-      {label}
-    </span>
-    {isActive && (
-      <motion.div layoutId="nav-indicator"
-        className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full bg-glow-magenta"
-        style={{ boxShadow: '0 0 8px rgba(213,16,110,0.8)' }} />
-    )}
-  </Link>
-)
-
-const Badge = ({ count }) => (
-  <AnimatePresence>
-    {count > 0 && (
-      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-        className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-glow-magenta px-1 text-[10px] font-black text-white"
-        style={{ boxShadow: '0 0 10px rgba(213,16,110,0.7)' }}>
-        {count}
-      </motion.span>
-    )}
-  </AnimatePresence>
-)
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -46,11 +16,18 @@ export default function Navbar() {
   const { wishlistCount } = useWishlist()
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
+  const { lang, toggleLang, t } = useLanguage()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userRef = useRef(null)
+
+  const navLinks = [
+    { label: t('home'),     to: '/' },
+    { label: t('products'), to: '/products' },
+    { label: t('track'),    to: '/orders' },
+  ]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -109,6 +86,14 @@ export default function Navbar() {
 
           {/* Right Icons */}
           <div className="flex items-center gap-1">
+            {/* Language Toggle */}
+            <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }}
+              onClick={toggleLang}
+              title={lang === 'en' ? 'Switch to Bangla' : 'Switch to English'}
+              className="rounded-full border border-white/15 px-2.5 py-1 text-xs font-bold text-white/70 transition hover:border-glow-magenta/40 hover:text-white">
+              {lang === 'en' ? 'বাং' : 'EN'}
+            </motion.button>
+
             {/* Search */}
             <motion.button type="button" whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
               onClick={() => setSearchOpen(true)}
@@ -168,11 +153,11 @@ export default function Navbar() {
                       <div className="p-2">
                         <button type="button" onClick={() => navigate('/account')}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/5 hover:text-white">
-                          <Package size={15} /> My Orders
+                          <Package size={15} /> {t('myOrders')}
                         </button>
                         <button type="button" onClick={() => { logout(); navigate('/') }}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 transition hover:bg-red-500/10">
-                          <LogOut size={15} /> Logout
+                          <LogOut size={15} /> {t('logout')}
                         </button>
                       </div>
                     </motion.div>
@@ -201,7 +186,7 @@ export default function Navbar() {
                     {l.label}
                   </Link>
                 ))}
-                {user && <Link to="/account" className="rounded-xl px-3 py-3 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white">Account</Link>}
+                {user && <Link to="/account" className="rounded-xl px-3 py-3 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white">{t('account')}</Link>}
               </nav>
             </motion.div>
           )}
@@ -212,3 +197,27 @@ export default function Navbar() {
     </>
   )
 }
+
+const NavLink = ({ to, label, isActive }) => (
+  <Link to={to} className="relative px-1 py-0.5 text-sm font-medium group">
+    <span className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/55 group-hover:text-white'}`}>{label}</span>
+    {isActive && (
+      <motion.div layoutId="nav-indicator"
+        className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full bg-glow-magenta"
+        style={{ boxShadow: '0 0 8px rgba(213,16,110,0.8)' }} />
+    )}
+  </Link>
+)
+
+const Badge = ({ count }) => (
+  <AnimatePresence>
+    {count > 0 && (
+      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+        className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-glow-magenta px-1 text-[10px] font-black text-white"
+        style={{ boxShadow: '0 0 10px rgba(213,16,110,0.7)' }}>
+        {count}
+      </motion.span>
+    )}
+  </AnimatePresence>
+)
+

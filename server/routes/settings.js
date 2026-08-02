@@ -51,6 +51,13 @@ const DEFAULTS = {
   social_linkedin: '',
   facebook_pixel_id: '',
   facebook_pixel_enabled: false,
+  // Hero product showcase card (shown in the hero section)
+  hero_product_name: 'Vitamin C Serum',
+  hero_product_name_bn: 'ভিটামিন সি সিরাম',
+  hero_product_price: '1,450',
+  hero_product_label: 'Trending',
+  hero_product_label_bn: 'ট্রেন্ডিং',
+  hero_product_image: '',
 };
 
 // Public: SSE stream — kept for backward compat, real traffic goes to /api/events
@@ -156,6 +163,8 @@ router.put('/', rl, protect, adminOnly, async (req, res, next) => {
       'social_facebook', 'social_instagram', 'social_tiktok',
       'social_youtube', 'social_twitter', 'social_pinterest', 'social_linkedin',
       'promo_cards', 'facebook_pixel_id', 'facebook_pixel_enabled',
+      'hero_product_name', 'hero_product_name_bn', 'hero_product_price',
+      'hero_product_label', 'hero_product_label_bn', 'hero_product_image',
     ];
     if (sse.clientCount() > 0) {
       const docs = await SiteSetting.find({ key: { $in: PUBLIC_KEYS } });

@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SiteSettingsProvider, useSiteSettings } from './context/SiteSettingsContext'
 import { RealtimeProvider } from './context/RealtimeContext'
+import { LanguageProvider } from './context/LanguageContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { WishlistProvider } from './context/WishlistContext'
 import LoadingBar from './components/ui/LoadingBar'
@@ -62,6 +63,7 @@ function RealtimeGate({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
+      <LanguageProvider>
       <SiteSettingsProvider>
         <RealtimeGate>
       <AuthProvider>
@@ -96,6 +98,7 @@ export default function App() {
       </AuthProvider>
         </RealtimeGate>
       </SiteSettingsProvider>
+      </LanguageProvider>
     </ThemeProvider>
   )
 }

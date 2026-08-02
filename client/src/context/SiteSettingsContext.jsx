@@ -47,6 +47,12 @@ export const DEFAULTS = {
   promo_cards: [],
   facebook_pixel_id: '',
   facebook_pixel_enabled: false,
+  hero_product_name: 'Vitamin C Serum',
+  hero_product_name_bn: 'ভিটামিন সি সিরাম',
+  hero_product_price: '1,450',
+  hero_product_label: 'Trending',
+  hero_product_label_bn: 'ট্রেন্ডিং',
+  hero_product_image: '',
 }
 
 export function SiteSettingsProvider({ children }) {

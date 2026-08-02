@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../../api/axios'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 // ── Default promo card data ───────────────────────────────────────────────────
 const DEFAULTS = [
@@ -133,17 +133,11 @@ function PromoCard({ title, subtitle, emoji, link, bgFrom, bgTo, index }) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function PromoCards() {
-  const [cards, setCards] = useState(DEFAULTS)
+  const { settings } = useSiteSettings()
+  const { t } = useLanguage()
 
-  useEffect(() => {
-    api.get('/settings/public')
-      .then(({ data }) => {
-        const pc = data.settings?.promo_cards
-        if (Array.isArray(pc) && pc.length > 0) setCards(pc)
-      })
-      .catch(() => {})
-  }, [])
-
+  const raw = settings.promo_cards
+  const cards = Array.isArray(raw) && raw.length > 0 ? raw : DEFAULTS
   const activeCards = cards.filter(c => c.active !== false)
   if (!activeCards.length) return null
 
@@ -159,11 +153,11 @@ export default function PromoCards() {
           transition={{ duration: 0.5 }}
         >
           <div className="h-0.5 w-6 rounded-full bg-glow-magenta" />
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-glow-magenta">Special Offers</p>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-glow-magenta">{t('specialOffers')}</p>
           <div className="h-0.5 flex-1 rounded-full bg-glow-magenta/20" />
         </motion.div>
 
-        {/* Cards grid: 2-col on mobile, 4-col on desktop */}
+        {/* Cards grid */}
         <div className={`grid gap-3 sm:gap-4 lg:gap-5 ${
           activeCards.length === 4 ? 'grid-cols-2 lg:grid-cols-4' :
           activeCards.length === 3 ? 'grid-cols-2 sm:grid-cols-3' :
