@@ -44,7 +44,22 @@ export default function CouponsPage() {
     setForm({ ...emptyForm, code: Math.random().toString(36).substring(2, 8).toUpperCase() });
     setShowModal(true);
   };
-  const openEdit = (c) => { setEditingCoupon(c); setForm({ ...emptyForm, ...c, expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : '', value: String(c.value), usageLimit: c.usageLimit ?? '', maxDiscountAmount: c.maxDiscountAmount ?? '' }); setShowModal(true); };
+  const openEdit = (c) => {
+    setEditingCoupon(c);
+    // Only copy known form fields — never include _id, __v, usedCount, createdAt
+    setForm({
+      code: c.code || '',
+      description: c.description || '',
+      type: c.type || 'percentage',
+      value: String(c.value ?? ''),
+      minOrderAmount: c.minOrderAmount ?? 0,
+      maxDiscountAmount: c.maxDiscountAmount ?? '',
+      usageLimit: c.usageLimit ?? '',
+      isActive: c.isActive !== undefined ? c.isActive : true,
+      expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
+    });
+    setShowModal(true);
+  };
   const closeModal = () => { setShowModal(false); setEditingCoupon(null); };
 
   const handleChange = (e) => {

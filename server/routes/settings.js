@@ -115,9 +115,17 @@ router.get('/', rl, protect, adminOnly, async (req, res, next) => {
 // Admin: bulk update settings  ← must be defined BEFORE /:key to avoid shadowing
 router.put('/', rl, protect, adminOnly, async (req, res, next) => {
   try {
-    const { settings } = req.body;
-    if (!settings || typeof settings !== 'object' || Array.isArray(settings))
-      return res.status(400).json({ success: false, message: 'settings must be a plain object' });
+    // Accept both { settings: {...} } and a direct flat object { key: value, ... }
+    let settings = req.body.settings;
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      // Fallback: treat the whole body as the settings map (exclude internal keys)
+      const { settings: _s, ...rest } = req.body;
+      settings = Object.keys(rest).length > 0 ? rest : null;
+    }
+
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      return res.status(400).json({ success: false, message: 'Request body must contain a settings object' });
+    }
 
     const ops = Object.entries(settings).map(([key, value]) => ({
       updateOne: {

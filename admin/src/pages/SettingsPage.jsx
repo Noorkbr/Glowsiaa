@@ -104,6 +104,14 @@ export default function SettingsPage() {
     fetchSettings();
   }, []);
 
+  // Re-fetch from DB to keep form in sync (avoids stale/mismatch on refresh)
+  const reloadSettings = async () => {
+    try {
+      const { data } = await api.get('/settings');
+      setForm(data.settings || {});
+    } catch { /* silent */ }
+  };
+
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
@@ -116,6 +124,8 @@ export default function SettingsPage() {
       await api.put('/settings', { settings: form });
       toast.success('Settings saved successfully!');
       setDirty(false);
+      // Re-sync form with DB so displayed values always match MongoDB
+      await reloadSettings();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save settings');
     } finally {

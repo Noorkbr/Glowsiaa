@@ -43,15 +43,30 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ─── Global body sanitiser ──────────────────────────────────────────────────
-// Strip immutable MongoDB fields from every PUT / PATCH body.
-// This prevents CastErrors ("Invalid resource identifier") caused by
-// the frontend accidentally sending _id, __v or createdAt in update payloads.
+// Strip immutable MongoDB fields from every write request body.
+// This permanently prevents CastErrors ("Invalid resource identifier") caused
+// by the frontend accidentally sending _id, __v or timestamp fields.
+const IMMUTABLE_KEYS = ['_id', '__v', 'createdAt', 'updatedAt'];
+
+function sanitizeObj(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+  IMMUTABLE_KEYS.forEach((k) => delete obj[k]);
+  // Also sanitize one level deep (e.g. items inside arrays)
+  Object.values(obj).forEach((v) => {
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      IMMUTABLE_KEYS.forEach((k) => delete v[k]);
+    }
+    if (Array.isArray(v)) {
+      v.forEach((item) => {
+        if (item && typeof item === 'object') IMMUTABLE_KEYS.forEach((k) => delete item[k]);
+      });
+    }
+  });
+}
+
 app.use((req, res, next) => {
-  if ((req.method === 'PUT' || req.method === 'PATCH') && req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
-    delete req.body._id;
-    delete req.body.__v;
-    delete req.body.createdAt;
-    delete req.body.updatedAt;
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body && typeof req.body === 'object') {
+    sanitizeObj(req.body);
   }
   next();
 });
