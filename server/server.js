@@ -22,7 +22,7 @@ const sse           = require('./services/sseManager');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-mongoose.set('sanitizeFilter', true);
+mongoose.set('sanitizeFilter', false); // disabled — routes use mongoose.sanitizeFilter() manually where user input is involved
 
 // Parse allowed origins
 const allowedOrigins = process.env.ALLOWED_ORIGINS
