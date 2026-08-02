@@ -53,22 +53,32 @@ export function SiteSettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULTS)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    api.get('/settings/public')
-      .then(({ data }) => {
-        if (data.settings) setSettings(s => ({ ...s, ...data.settings }))
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-
-  const refresh = useCallback(() => {
-    api.get('/settings/public')
+  const fetchSettings = useCallback(() => {
+    return api.get('/settings/public')
       .then(({ data }) => { if (data.settings) setSettings(s => ({ ...s, ...data.settings })) })
       .catch(() => {})
   }, [])
 
-  const value = useMemo(() => ({ settings, loading, refresh }), [settings, loading, refresh])
+  useEffect(() => {
+    // Initial load
+    fetchSettings().finally(() => setLoading(false))
+
+    // Re-fetch whenever the user returns to this tab (picks up admin changes instantly)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchSettings()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    // Also poll every 30 seconds so long-open tabs stay in sync
+    const interval = setInterval(fetchSettings, 30_000)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      clearInterval(interval)
+    }
+  }, [fetchSettings])
+
+  const value = useMemo(() => ({ settings, loading, refresh: fetchSettings }), [settings, loading, fetchSettings])
   return <SiteSettingsContext.Provider value={value}>{children}</SiteSettingsContext.Provider>
 }
 
