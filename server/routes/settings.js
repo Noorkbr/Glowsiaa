@@ -2,6 +2,7 @@ const express = require('express');
 const SiteSetting = require('../models/SiteSetting');
 const { protect, adminOnly } = require('../middleware/auth');
 const { createRateLimit } = require('../middleware/rateLimit');
+const sse = require('../services/sseManager');
 
 const router = express.Router();
 const rl = createRateLimit({ windowMs: 15 * 60 * 1000, max: 300, message: 'Too many setting requests' });
@@ -51,6 +52,27 @@ const DEFAULTS = {
   facebook_pixel_id: '',
   facebook_pixel_enabled: false,
 };
+
+// Public: SSE stream — client subscribes once, server pushes on every settings save
+router.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable Nginx buffering on Railway
+  res.flushHeaders();
+
+  // Send a heartbeat comment every 25 s to keep the connection alive through proxies
+  const heartbeat = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch { clearInterval(heartbeat); }
+  }, 25_000);
+
+  sse.addClient(res);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sse.removeClient(res);
+  });
+});
 
 // Public: get public settings
 router.get('/public', rl, async (req, res, next) => {
@@ -119,6 +141,32 @@ router.put('/', rl, protect, adminOnly, async (req, res, next) => {
     }));
 
     await SiteSetting.bulkWrite(ops);
+
+    // Push updated settings to every open client tab via SSE immediately
+    const PUBLIC_KEYS = [
+      'top_banner_messages', 'announcement', 'announcement_active',
+      'store_name', 'store_tagline', 'store_description',
+      'support_email', 'support_phone', 'whatsapp_number', 'store_address',
+      'footer_copyright', 'logo_url', 'favicon_url',
+      'primary_color', 'secondary_color',
+      'delivery_fee_inside', 'delivery_fee_outside', 'free_delivery_above',
+      'bkash_enabled', 'nagad_enabled', 'rocket_enabled', 'cod_enabled',
+      'bkash_merchant_number', 'nagad_merchant_number', 'rocket_merchant_number',
+      'seo_title', 'seo_description',
+      'social_facebook', 'social_instagram', 'social_tiktok',
+      'social_youtube', 'social_twitter', 'social_pinterest', 'social_linkedin',
+      'promo_cards', 'facebook_pixel_id', 'facebook_pixel_enabled',
+    ];
+    if (sse.clientCount() > 0) {
+      const docs = await SiteSetting.find({ key: { $in: PUBLIC_KEYS } });
+      const updated = {};
+      PUBLIC_KEYS.forEach((k) => {
+        const doc = docs.find((d) => d.key === k);
+        updated[k] = doc ? doc.value : DEFAULTS[k] ?? null;
+      });
+      sse.broadcast(updated);
+    }
+
     res.json({ success: true, message: 'Settings updated' });
   } catch (e) { next(e); }
 });

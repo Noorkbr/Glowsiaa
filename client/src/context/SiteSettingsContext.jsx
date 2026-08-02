@@ -3,6 +3,15 @@ import api from '../api/axios'
 
 const SiteSettingsContext = createContext(null)
 
+// Derive the SSE URL from the same base the axios instance uses.
+// Works in both local dev (Vite proxy → /api) and production (full URL).
+const SSE_URL = (import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+  : import.meta.env.DEV
+    ? '/api'
+    : 'https://glowsiaa-production.up.railway.app/api'
+) + '/settings/events'
+
 export const DEFAULTS = {
   logo_url: '',
   favicon_url: '',
@@ -53,30 +62,56 @@ export function SiteSettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULTS)
   const [loading, setLoading] = useState(true)
 
-  const fetchSettings = useCallback(() => {
-    return api.get('/settings/public')
-      .then(({ data }) => { if (data.settings) setSettings(s => ({ ...s, ...data.settings })) })
-      .catch(() => {})
+  const applySettings = useCallback((incoming) => {
+    setSettings(s => ({ ...s, ...incoming }))
   }, [])
 
+  const fetchSettings = useCallback(() => {
+    return api.get('/settings/public')
+      .then(({ data }) => { if (data.settings) applySettings(data.settings) })
+      .catch(() => {})
+  }, [applySettings])
+
   useEffect(() => {
-    // Initial load
+    // 1. Initial HTTP fetch
     fetchSettings().finally(() => setLoading(false))
 
-    // Re-fetch whenever the user returns to this tab (picks up admin changes instantly)
+    // 2. SSE — server pushes settings the instant admin saves
+    let es
+    let reconnectTimer
+
+    const connect = () => {
+      es = new EventSource(SSE_URL)
+
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data)
+          applySettings(data)
+        } catch { /* ignore malformed frames */ }
+      }
+
+      es.onerror = () => {
+        es.close()
+        // Auto-reconnect after 5 seconds if connection drops
+        reconnectTimer = setTimeout(connect, 5_000)
+      }
+    }
+
+    connect()
+
+    // 3. Fallback: refetch when the user switches back to this tab
+    //    (handles the case where SSE was closed while tab was hidden)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') fetchSettings()
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
-    // Also poll every 30 seconds so long-open tabs stay in sync
-    const interval = setInterval(fetchSettings, 30_000)
-
     return () => {
+      es?.close()
+      clearTimeout(reconnectTimer)
       document.removeEventListener('visibilitychange', handleVisibility)
-      clearInterval(interval)
     }
-  }, [fetchSettings])
+  }, [fetchSettings, applySettings])
 
   const value = useMemo(() => ({ settings, loading, refresh: fetchSettings }), [settings, loading, fetchSettings])
   return <SiteSettingsContext.Provider value={value}>{children}</SiteSettingsContext.Provider>
