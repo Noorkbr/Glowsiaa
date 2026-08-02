@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { Route, Routes, useLocation } from 'react-router-dom'
+import { Component } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SiteSettingsProvider, useSiteSettings } from './context/SiteSettingsContext'
@@ -60,8 +61,28 @@ function RealtimeGate({ children }) {
   return <RealtimeProvider onSettings={applySettings}>{children}</RealtimeProvider>
 }
 
+// Error boundary — shows error message instead of blank page on any crash
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#05050A', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'sans-serif' }}>
+          <p style={{ color: '#D5106E', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>⚠️ Glowsiaa</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>Something went wrong. Please refresh the page.</p>
+          <pre style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', maxWidth: '600px', overflow: 'auto' }}>{this.state.error?.message}</pre>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '1.5rem', background: '#D5106E', color: '#fff', border: 'none', borderRadius: '9999px', padding: '0.75rem 2rem', cursor: 'pointer', fontWeight: 'bold' }}>Refresh</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function App() {
   return (
+    <ErrorBoundary>
     <ThemeProvider>
       <LanguageProvider>
       <SiteSettingsProvider>
@@ -100,5 +121,6 @@ export default function App() {
       </SiteSettingsProvider>
       </LanguageProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   )
 }

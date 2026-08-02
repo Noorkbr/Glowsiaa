@@ -155,8 +155,8 @@ export default function HeroCarousel() {
   }, [bannersKey])
   useEffect(() => {
     if (banners.length <= 1) return
-    const t = setInterval(() => setCurrent(c => (c + 1) % banners.length), 6000)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setCurrent(c => (c + 1) % banners.length), 6000)
+    return () => clearInterval(timer)
   }, [banners.length])
 
   const b = banners[current]

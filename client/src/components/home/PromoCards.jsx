@@ -118,7 +118,7 @@ function PromoCard({ title, subtitle, emoji, link, bgFrom, bgTo, index }) {
           <WavyWord text={title} globalDelay={index * 0.2} />
 
           <div className="mt-1">
-            {subtitle.split('\n').map((line, i) => (
+            {(subtitle || '').split('\n').map((line, i) => (
               <p key={i} className="text-white/80 font-semibold leading-tight"
                 style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.9rem)' }}>
                 {line}
