@@ -3,7 +3,6 @@ import api from '../api/axios'
 
 const SiteSettingsContext = createContext(null)
 
-
 export const DEFAULTS = {
   logo_url: '',
   favicon_url: '',
@@ -55,61 +54,35 @@ export function SiteSettingsProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   const applySettings = useCallback((incoming) => {
-    setSettings(s => ({ ...s, ...incoming }))
+    if (incoming && typeof incoming === 'object') {
+      setSettings((s) => ({ ...s, ...incoming }))
+    }
   }, [])
 
   const fetchSettings = useCallback(() => {
     return api.get('/settings/public')
-      .then(({ data }) => { if (data.settings) applySettings(data.settings) })
+      .then(({ data }) => { if (data?.settings) applySettings(data.settings) })
       .catch(() => {})
   }, [applySettings])
 
   useEffect(() => {
-    // 1. Initial HTTP fetch
+    // Initial fetch on mount
     fetchSettings().finally(() => setLoading(false))
 
-    // 2. SSE — server pushes settings the instant admin saves
-    let es
-    let reconnectTimer
-
-    const connect = () => {
-      es = new EventSource(SSE_URL)
-
-      es.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data)
-          applySettings(data)
-        } catch { /* ignore malformed frames */ }
-      }
-
-      es.onerror = () => {
-        es.close()
-        // Auto-reconnect after 5 seconds if connection drops
-        reconnectTimer = setTimeout(connect, 5_000)
-      }
-    }
-
-    connect()
-
-    // 3. Fallback: refetch when the user switches back to this tab
-    //    (handles the case where SSE was closed while tab was hidden)
-    const handleVisibility = () => {
+    // Re-fetch when user switches back to tab (SSE reconnect may have missed events)
+    const onVisible = () => {
       if (document.visibilityState === 'visible') fetchSettings()
     }
-    document.addEventListener('visibilitychange', handleVisibility)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [fetchSettings])
 
-    return () => {
-      es?.close()
-      clearTimeout(reconnectTimer)
-      document.removeEventListener('visibilitychange', handleVisibility)
-    }
-  }, [fetchSettings, applySettings])
-
-  // applySettings is exposed so RealtimeProvider can push live settings via SSE
+  // applySettings is exposed so RealtimeProvider can push SSE settings events
   const value = useMemo(
     () => ({ settings, loading, refresh: fetchSettings, applySettings }),
     [settings, loading, fetchSettings, applySettings]
   )
+
   return <SiteSettingsContext.Provider value={value}>{children}</SiteSettingsContext.Provider>
 }
 

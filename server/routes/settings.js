@@ -53,25 +53,19 @@ const DEFAULTS = {
   facebook_pixel_enabled: false,
 };
 
-// Public: SSE stream — client subscribes once, server pushes on every settings save
+// Public: SSE stream — kept for backward compat, real traffic goes to /api/events
+// This endpoint is effectively unused now but kept to avoid 404s from old clients
 router.get('/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // disable Nginx buffering on Railway
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
-
-  // Send a heartbeat comment every 25 s to keep the connection alive through proxies
   const heartbeat = setInterval(() => {
     try { res.write(': ping\n\n'); } catch { clearInterval(heartbeat); }
   }, 25_000);
-
   sse.addClient(res);
-
-  req.on('close', () => {
-    clearInterval(heartbeat);
-    sse.removeClient(res);
-  });
+  req.on('close', () => { clearInterval(heartbeat); sse.removeClient(res); });
 });
 
 // Public: get public settings
