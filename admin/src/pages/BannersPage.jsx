@@ -42,7 +42,26 @@ export default function BannersPage() {
   };
 
   const openCreate = () => { setEditingBanner(null); setForm(emptyForm); setShowModal(true); };
-  const openEdit = (b) => { setEditingBanner(b); setForm({ ...emptyForm, ...b }); setShowModal(true); };
+  const openEdit = (b) => {
+    setEditingBanner(b);
+    // Spread only the known form fields — never include _id, __v, createdAt
+    setForm({
+      title: b.title || '',
+      subtitle: b.subtitle || '',
+      badgeText: b.badgeText || '',
+      buttonText: b.buttonText || 'Shop Now',
+      buttonLink: b.buttonLink || '/products',
+      secondaryButtonText: b.secondaryButtonText || '',
+      secondaryButtonLink: b.secondaryButtonLink || '',
+      imageUrl: b.imageUrl || '',
+      gradient: b.gradient || GRADIENTS[0],
+      overlayColor: b.overlayColor || 'rgba(11,11,18,0.55)',
+      type: b.type || 'hero',
+      isActive: b.isActive ?? true,
+      order: b.order ?? 0,
+    });
+    setShowModal(true);
+  };
   const closeModal = () => { setShowModal(false); setEditingBanner(null); };
 
   const handleChange = (e) => {
@@ -70,7 +89,8 @@ export default function BannersPage() {
 
   const toggleActive = async (banner) => {
     try {
-      const { data } = await api.put(`/banners/${banner._id}`, { ...banner, isActive: !banner.isActive });
+      // Only send the single changed field — never spread the full MongoDB document
+      const { data } = await api.put(`/banners/${banner._id}`, { isActive: !banner.isActive });
       setBanners(p => p.map(b => b._id === banner._id ? data.banner : b));
       toast.success(data.banner.isActive ? 'Banner activated' : 'Banner deactivated');
     } catch { toast.error('Failed to update'); }

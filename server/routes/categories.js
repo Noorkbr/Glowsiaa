@@ -72,6 +72,13 @@ router.get('/admin/all', rl, protect, adminOnly, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Helper: return a valid ObjectId string or null — prevents CastError on parent field
+const toParentId = (val) => {
+  if (!val || val === 'null' || val === 'undefined' || val === '') return null;
+  if (!mongoose.isValidObjectId(val)) return null;
+  return val;
+};
+
 // POST /api/categories — create
 router.post('/', rl, protect, adminOnly, async (req, res, next) => {
   try {
@@ -81,7 +88,7 @@ router.post('/', rl, protect, adminOnly, async (req, res, next) => {
       imageUrl: req.body.imageUrl,
       emoji: req.body.emoji,
       gradient: req.body.gradient,
-      parent: req.body.parent || null,
+      parent: toParentId(req.body.parent),
       isActive: req.body.isActive !== undefined ? req.body.isActive : true,
       order: req.body.order || 0,
     });
@@ -101,7 +108,7 @@ router.put('/:id', rl, protect, adminOnly, async (req, res, next) => {
       imageUrl: req.body.imageUrl,
       emoji: req.body.emoji,
       gradient: req.body.gradient,
-      parent: req.body.parent || null,
+      parent: toParentId(req.body.parent),
       isActive: req.body.isActive,
       order: req.body.order,
     };

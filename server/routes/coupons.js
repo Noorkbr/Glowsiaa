@@ -58,7 +58,11 @@ router.put('/:id', rl, protect, adminOnly, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id))
       return res.status(400).json({ success: false, message: 'Invalid ID' });
-    const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+    // Strip immutable/internal fields
+    const { _id, __v, createdAt, ...safeBody } = req.body;
+
+    const coupon = await Coupon.findByIdAndUpdate(req.params.id, safeBody, { new: true, runValidators: true });
     if (!coupon) return res.status(404).json({ success: false, message: 'Coupon not found' });
     res.json({ success: true, coupon });
   } catch (e) { next(e); }

@@ -39,7 +39,11 @@ router.put('/:id', rl, protect, adminOnly, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id))
       return res.status(400).json({ success: false, message: 'Invalid ID' });
-    const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+    // Strip immutable/internal fields that must never be updated
+    const { _id, __v, createdAt, ...safeBody } = req.body;
+
+    const banner = await Banner.findByIdAndUpdate(req.params.id, safeBody, { new: true, runValidators: true });
     if (!banner) return res.status(404).json({ success: false, message: 'Banner not found' });
     res.json({ success: true, banner });
   } catch (e) { next(e); }
