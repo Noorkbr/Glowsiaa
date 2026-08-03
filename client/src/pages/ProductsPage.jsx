@@ -9,6 +9,7 @@ import Navbar from '../components/layout/Navbar'
 import ProductCard from '../components/product/ProductCard'
 import ProductCursor from '../components/ui/ProductCursor'
 import WhatsAppButton from '../components/ui/WhatsAppButton'
+import { useRealtime } from '../context/RealtimeContext'
 
 const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str
 
@@ -17,6 +18,8 @@ export default function ProductsPage() {
   const [products, setProducts] = useState([])
   const [dbCategories, setDbCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const productsKey = useRealtime('products')
+  const categoriesKey = useRealtime('categories')
 
   const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') || 'all')
   const [selectedSubCategory, setSelectedSubCategory] = useState(() => searchParams.get('subCategory') || '')
@@ -26,7 +29,7 @@ export default function ProductsPage() {
   // Load categories tree
   useEffect(() => {
     api.get('/categories').then(({ data }) => setDbCategories(data.categories || [])).catch(() => {})
-  }, [])
+  }, [categoriesKey])
 
   // Fetch products when filters change
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function ProductsPage() {
       setLoading(false)
     }
     fetchProducts()
-  }, [searchQuery, selectedCategory, selectedSubCategory])
+  }, [searchQuery, selectedCategory, selectedSubCategory, productsKey])
 
   // Sync URL params
   useEffect(() => {

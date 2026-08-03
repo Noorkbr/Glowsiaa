@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
+import { useRealtime } from '../../context/RealtimeContext'
 
 // ── Sky gradient presets ──────────────────────────────────────────────────────
 const SKY_GRADIENTS = [
@@ -109,17 +110,17 @@ function CategoryCard({ name, slug, imageUrl, emoji, index }) {
 // ── Main export ───────────────────────────────────────────────────────────��───
 export default function CategoryShowcase() {
   const [categories, setCategories] = useState([])
+  const categoriesKey = useRealtime('categories')
 
   useEffect(() => {
     api.get('/categories')
       .then(({ data }) => {
         const cats = data.categories || []
-        // Only top-level, active categories with images
         const filtered = cats.filter(c => !c.parent && c.isActive)
         setCategories(filtered.length >= 2 ? filtered : FALLBACK)
       })
       .catch(() => setCategories(FALLBACK))
-  }, [])
+  }, [categoriesKey])
 
   return (
     <section className="px-3 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">

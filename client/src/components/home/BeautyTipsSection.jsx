@@ -3,6 +3,7 @@ import { ArrowRight, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
+import { useRealtime } from '../../context/RealtimeContext'
 
 const CAT_COLORS = {
   skincare:  'from-pink-500/20 to-rose-500/20 border-pink-500/20',
@@ -20,12 +21,13 @@ const DEFAULT_TIPS = [
 
 export default function BeautyTipsSection() {
   const [tips, setTips] = useState(DEFAULT_TIPS)
+  const tipsKey = useRealtime('tips')
 
   useEffect(() => {
     api.get('/tips', { params: { limit: 6 } })
       .then(({ data }) => { if (data.tips?.length > 0) setTips(data.tips) })
       .catch(() => {})
-  }, [])
+  }, [tipsKey])
 
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8">

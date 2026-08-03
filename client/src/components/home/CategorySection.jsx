@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
+import { useRealtime } from '../../context/RealtimeContext'
 
 // Fallback categories used until DB responds
 const FALLBACK = [
@@ -13,6 +14,7 @@ const FALLBACK = [
 
 export default function CategorySection() {
   const [categories, setCategories] = useState(FALLBACK)
+  const categoriesKey = useRealtime('categories')
 
   useEffect(() => {
     api.get('/categories')
@@ -20,7 +22,7 @@ export default function CategorySection() {
         if (data.categories?.length > 0) setCategories(data.categories)
       })
       .catch(() => {})
-  }, [])
+  }, [categoriesKey])
 
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8">
