@@ -40,6 +40,11 @@ coverage/
 # TypeScript (if ever needed)
 *.tsbuildinfo
 
+# Temporary files
+temp_*.txt
+temp_*.js
+*.tmp
+
 # package-lock.json (we use npm workspaces)
 # Uncomment below if you want to ignore lock files
 # package-lock.json

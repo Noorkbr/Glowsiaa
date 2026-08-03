@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Clock, Flame, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
@@ -49,11 +49,17 @@ export default function FlashSaleBanner() {
   const { settings } = useSiteSettings()
   const settingsKey = useRealtime('settings')
   const [dealProduct, setDealProduct] = useState(null)
+  // Stable fallback end time — only computed once per mount (not on every render)
+  const [fallbackEnd] = useState(() => Date.now() + 8 * 60 * 60 * 1000)
 
-  // Use admin-configured end time, or fallback to 8h from now
-  const saleEndMs = settings.flash_sale_end_time
-    ? new Date(settings.flash_sale_end_time).getTime()
-    : Date.now() + 8 * 60 * 60 * 1000
+  // saleEndMs is memoized so it doesn't recalculate on every render
+  const saleEndMs = useMemo(() => {
+    if (settings.flash_sale_end_time) {
+      const t = new Date(settings.flash_sale_end_time).getTime()
+      return isNaN(t) ? fallbackEnd : t
+    }
+    return fallbackEnd
+  }, [settings.flash_sale_end_time, fallbackEnd])
 
   const { hours, minutes, seconds, done } = useCountdown(saleEndMs)
 

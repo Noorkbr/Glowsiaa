@@ -123,25 +123,20 @@ router.get('/', rl, protect, adminOnly, async (req, res, next) => {
 // Admin: bulk update settings  ← must be defined BEFORE /:key to avoid shadowing
 router.put('/', rl, protect, adminOnly, async (req, res, next) => {
   try {
-    // Debug: log what arrives so we can trace the 400 issue in Railway logs
-    console.log('[settings PUT] body keys:', Object.keys(req.body || {}));
-    console.log('[settings PUT] typeof body.settings:', typeof req.body?.settings);
-
     // Accept { settings: {...} } OR a direct flat object { key: value, ... }
     let settings = null;
     if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
       if (req.body.settings && typeof req.body.settings === 'object' && !Array.isArray(req.body.settings)) {
         settings = req.body.settings;
       } else {
-        // Fallback: the whole body is the settings map
         const { settings: _ignored, ...rest } = req.body;
         if (Object.keys(rest).length > 0) settings = rest;
       }
     }
 
-    // If nothing usable arrived, return success with no-op (never 400 for auth'd admins)
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
-      console.log('[settings PUT] no valid settings in body — returning no-op 200');
+      return res.json({ success: true, message: 'No settings to update' });
+    }
       return res.json({ success: true, message: 'No settings to update' });
     }
 
