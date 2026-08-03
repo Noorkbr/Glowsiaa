@@ -3,6 +3,8 @@ import { ArrowRight, Clock, Flame, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { useRealtime } from '../../context/RealtimeContext'
 
 /* ─── Countdown helper ─────────────────────────────────────── */
 function useCountdown(targetMs) {
@@ -44,26 +46,55 @@ function Digit({ value, label }) {
 
 /* ─── Main component ───────────────────────────────────────── */
 export default function FlashSaleBanner() {
+  const { settings } = useSiteSettings()
+  const settingsKey = useRealtime('settings')
   const [dealProduct, setDealProduct] = useState(null)
 
-  // Flash sale ends in ~8 hours from first render
-  const [saleEnd] = useState(() => Date.now() + 8 * 60 * 60 * 1000)
-  const { hours, minutes, seconds, done } = useCountdown(saleEnd)
+  // Use admin-configured end time, or fallback to 8h from now
+  const saleEndMs = settings.flash_sale_end_time
+    ? new Date(settings.flash_sale_end_time).getTime()
+    : Date.now() + 8 * 60 * 60 * 1000
 
+  const { hours, minutes, seconds, done } = useCountdown(saleEndMs)
+
+  // Fetch the admin-selected product; fallback to highest-discount product
   useEffect(() => {
-    api.get('/products', { params: { limit: 1, sortBy: 'discount', order: 'desc' } })
-      .then(({ data }) => {
-        const list = Array.isArray(data) ? data : data?.products ?? []
-        if (list.length > 0) setDealProduct(list[0])
-      })
-      .catch(() => {})
-  }, [])
+    const productId = settings.flash_sale_product_id
+    if (productId) {
+      api.get(`/products/${productId}`)
+        .then(({ data }) => { if (data.product) setDealProduct(data.product) })
+        .catch(() => {
+          // fallback: get highest-discount product
+          api.get('/products').then(({ data }) => {
+            const list = data.products || []
+            if (list.length > 0) {
+              const sorted = [...list].sort((a, b) => (b.comparePrice - b.price) - (a.comparePrice - a.price))
+              setDealProduct(sorted[0])
+            }
+          }).catch(() => {})
+        })
+    } else {
+      api.get('/products')
+        .then(({ data }) => {
+          const list = data.products || []
+          if (list.length > 0) {
+            const sorted = [...list].sort((a, b) => (b.comparePrice - b.price) - (a.comparePrice - a.price))
+            setDealProduct(sorted[0])
+          }
+        })
+        .catch(() => {})
+    }
+  }, [settings.flash_sale_product_id, settingsKey])
 
+  // If admin disabled flash sale OR timer done, hide
+  if (settings.flash_sale_enabled === false) return null
   if (done) return null
 
   const price         = dealProduct ? Number(dealProduct.price || 0) : 0
   const comparePrice  = dealProduct ? Number(dealProduct.comparePrice || price) : 0
-  const discount      = comparePrice > price ? Math.round(((comparePrice - price) / comparePrice) * 100) : 40
+  const discountText  = settings.flash_sale_discount_text || `${comparePrice > price ? Math.round(((comparePrice - price) / comparePrice) * 100) : 40}% OFF`
+  const saleTitle     = settings.flash_sale_title || 'Flash Sale — Today Only'
+  const saleSubtitle  = settings.flash_sale_subtitle || 'Limited time, limited stock. Don\'t miss the glow-up deal.'
   const imgUrl        = dealProduct?.images?.[0]?.url || dealProduct?.images?.[0] || dealProduct?.image ||
                         'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&q=85'
 
@@ -97,18 +128,18 @@ export default function FlashSaleBanner() {
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <Flame size={16} className="text-glow-magenta" />
-                <span className="text-xs font-bold uppercase tracking-[0.28em] text-glow-magenta">Flash Sale — Today Only</span>
+                <span className="text-xs font-bold uppercase tracking-[0.28em] text-glow-magenta">⚡ {saleTitle}</span>
               </motion.div>
 
               <div>
                 <h2 className="font-heading text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
                   Up to{' '}
                   <span style={{ background: 'linear-gradient(135deg,#D5106E,#9B2FD0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    {discount}% OFF
+                    {discountText}
                   </span>
                 </h2>
                 <p className="mt-2 text-base text-white/55 sm:text-lg">
-                  Limited time, limited stock. Don't miss the glow-up deal.
+                  {saleSubtitle}
                 </p>
               </div>
 
@@ -147,14 +178,14 @@ export default function FlashSaleBanner() {
                 animate={{ y: [-8, 8, -8] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <motion.div
-                  className="absolute -right-3 -top-3 z-20 rounded-full bg-glow-magenta px-3 py-1.5 text-sm font-black text-white"
-                  animate={{ rotate: [0, -5, 5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  style={{ boxShadow: '0 0 20px rgba(213,16,110,0.7)' }}
-                >
-                  -{discount}%
-                </motion.div>
+                  <motion.div
+                    className="absolute -right-3 -top-3 z-20 rounded-full bg-glow-magenta px-3 py-1.5 text-sm font-black text-white"
+                    animate={{ rotate: [0, -5, 5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    style={{ boxShadow: '0 0 20px rgba(213,16,110,0.7)' }}
+                  >
+                    {discountText}
+                  </motion.div>
 
                 <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5"
                   style={{ width: 'clamp(200px, 25vw, 280px)', height: 'clamp(200px, 25vw, 280px)' }}>

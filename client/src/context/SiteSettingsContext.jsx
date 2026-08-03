@@ -53,6 +53,12 @@ export const DEFAULTS = {
   hero_product_label: 'Trending',
   hero_product_label_bn: 'ট্রেন্ডিং',
   hero_product_image: '',
+  flash_sale_enabled: false,
+  flash_sale_product_id: '',
+  flash_sale_end_time: '',
+  flash_sale_discount_text: '40% OFF',
+  flash_sale_title: 'Flash Sale — Today Only',
+  flash_sale_subtitle: "Limited time, limited stock.",
 }
 
 export function SiteSettingsProvider({ children }) {

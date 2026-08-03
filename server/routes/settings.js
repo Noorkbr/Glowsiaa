@@ -58,6 +58,13 @@ const DEFAULTS = {
   hero_product_label: 'Trending',
   hero_product_label_bn: 'ট্রেন্ডিং',
   hero_product_image: '',
+  // Flash sale
+  flash_sale_enabled: false,
+  flash_sale_product_id: '',
+  flash_sale_end_time: '',
+  flash_sale_discount_text: '40% OFF',
+  flash_sale_title: 'Flash Sale — Today Only',
+  flash_sale_subtitle: 'Limited time, limited stock.',
 };
 
 // Public: SSE stream — kept for backward compat, real traffic goes to /api/events
@@ -165,6 +172,8 @@ router.put('/', rl, protect, adminOnly, async (req, res, next) => {
       'promo_cards', 'facebook_pixel_id', 'facebook_pixel_enabled',
       'hero_product_name', 'hero_product_name_bn', 'hero_product_price',
       'hero_product_label', 'hero_product_label_bn', 'hero_product_image',
+      'flash_sale_enabled', 'flash_sale_product_id', 'flash_sale_end_time',
+      'flash_sale_discount_text', 'flash_sale_title', 'flash_sale_subtitle',
     ];
     if (sse.clientCount() > 0) {
       const docs = await SiteSetting.find({ key: { $in: PUBLIC_KEYS } });
