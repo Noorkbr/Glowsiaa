@@ -14,6 +14,14 @@ const getImg = (image) => {
   return image.url || image.secure_url || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=200&q=60'
 }
 
+// The Railway backend base URL — used for payment callbacks.
+// Must point to the API server, NOT the client (Vercel) URL.
+const API_ORIGIN = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
+  : import.meta.env.DEV
+    ? `${window.location.protocol}//${window.location.hostname}:5000`
+    : 'https://glowsiaa-production.up.railway.app'
+
 const INIT_FORM = { name: '', phone: '', address: '', location: 'inside_dhaka', paymentMethod: 'cod' }
 
 export default function CheckoutDrawer() {
@@ -91,13 +99,8 @@ export default function CheckoutDrawer() {
     if (!cartItems.length) { setError('Your cart is empty.'); return }
     setLoading(true); setError('')
 
-    // Compute the server base URL for payment callbacks
-    // In production set VITE_SERVER_URL=https://api.yourdomain.com in client/.env
-    const serverBase = import.meta.env.VITE_SERVER_URL ||
-      window.location.origin.replace(':5173', ':5000').replace(':5174', ':5000')
-
     try {
-      // First create the order in DB
+      // Create the order in DB first
       const payload = {
         customer: { name: form.name.trim(), phone: form.phone.trim(), address: form.address.trim(), location: form.location },
         items: cartItems.map(i => ({ product: i._id ?? i.id, name: i.name, price: i.price, quantity: i.quantity, image: getImg(i.images?.[0] ?? i.image) })),
@@ -110,11 +113,11 @@ export default function CheckoutDrawer() {
       const orderId = orderData?.order?.orderId ?? orderData?.orderId ?? 'Pending'
 
       if (form.paymentMethod === 'bkash') {
+        // Callback must go to the BACKEND (Railway), not the client (Vercel)
         const { data: bkData } = await api.post('/payments/bkash/create', {
           amount: grandTotal,
           orderId,
-          // Pass orderId as query param so callback can include it in redirect
-          callbackURL: `${serverBase}/api/payments/bkash/callback?orderId=${orderId}`,
+          callbackURL: `${API_ORIGIN}/api/payments/bkash/callback?orderId=${orderId}`,
         })
         clearCart()
         window.location.href = bkData.bkashURL
@@ -125,14 +128,14 @@ export default function CheckoutDrawer() {
         const { data: ngData } = await api.post('/payments/nagad/create', {
           amount: grandTotal,
           orderId,
-          callbackURL: `${serverBase}/api/payments/nagad/callback?orderId=${orderId}`,
+          callbackURL: `${API_ORIGIN}/api/payments/nagad/callback?orderId=${orderId}`,
         })
         clearCart()
         window.location.href = ngData.callBackUrl
         return
       }
 
-      // Rocket or COD — show success screen
+      // COD or Rocket — show success screen immediately
       setPlacedOrderId(orderId)
       setSuccess(true)
       clearCart()
@@ -182,6 +185,27 @@ export default function CheckoutDrawer() {
                   <h3 className="mt-6 font-heading text-3xl font-bold text-white">Order Placed! 🎉</h3>
                   <p className="mt-3 text-white/70">Your order ID is <span className="font-semibold text-white">{placedOrderId}</span></p>
                   <p className="mt-1.5 text-sm text-white/55">Estimated delivery 2–5 business days.</p>
+
+                  {/* Rocket payment instruction */}
+                  {form.paymentMethod === 'rocket' && settings.rocket_merchant_number && (
+                    <div className="mt-6 w-full max-w-xs rounded-2xl border border-purple-500/30 bg-purple-500/10 p-4 text-left">
+                      <p className="text-sm font-bold text-purple-300 mb-2">🚀 Complete Your Rocket Payment</p>
+                      <p className="text-xs text-white/70 mb-2">Send <strong className="text-white">{fmt(grandTotal)}</strong> to this Rocket number:</p>
+                      <p className="text-lg font-black text-white tracking-widest">{settings.rocket_merchant_number}</p>
+                      <p className="mt-2 text-xs text-white/50">Use your Order ID <strong>{placedOrderId}</strong> as the reference</p>
+                    </div>
+                  )}
+
+                  {/* bKash manual instructions if number set but no API */}
+                  {form.paymentMethod === 'bkash' && settings.bkash_merchant_number && (
+                    <div className="mt-6 w-full max-w-xs rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4 text-left">
+                      <p className="text-sm font-bold text-blue-300 mb-2">💙 Complete Your bKash Payment</p>
+                      <p className="text-xs text-white/70 mb-2">Send <strong className="text-white">{fmt(grandTotal)}</strong> to:</p>
+                      <p className="text-lg font-black text-white tracking-widest">{settings.bkash_merchant_number}</p>
+                      <p className="mt-2 text-xs text-white/50">Reference: <strong>{placedOrderId}</strong></p>
+                    </div>
+                  )}
+
                   <Link to={`/orders/${placedOrderId}`} onClick={closeCheckout}
                     className="mt-8 rounded-full bg-glow-magenta px-8 py-3.5 text-sm font-semibold uppercase tracking-[0.15em] text-white"
                     style={{ boxShadow: '0 0 28px rgba(213,16,110,0.4)' }}>
@@ -317,7 +341,12 @@ export default function CheckoutDrawer() {
                     <button type="button" onClick={handlePlaceOrder} disabled={loading}
                       className="flex-1 rounded-2xl bg-glow-magenta px-5 py-4 text-sm font-semibold uppercase text-white disabled:opacity-70"
                       style={{ boxShadow: '0 0 28px rgba(213,16,110,0.35)' }}>
-                       {loading ? 'Processing...' : form.paymentMethod === 'cod' ? 'Place Order' : `Pay with ${form.paymentMethod === 'bkash' ? 'bKash' : form.paymentMethod === 'nagad' ? 'Nagad' : 'Rocket'}`}
+                     {loading ? 'Processing...' :
+                       form.paymentMethod === 'cod' ? '🛒 Place Order (Pay on Delivery)' :
+                       form.paymentMethod === 'bkash' ? '💙 Pay with bKash' :
+                       form.paymentMethod === 'nagad' ? '🟠 Pay with Nagad' :
+                       '🚀 Place Order (Pay via Rocket)'
+                     }
                     </button>
                   </div>
                 </div>

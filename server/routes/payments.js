@@ -64,20 +64,25 @@ router.post('/bkash/execute', rl, async (req, res, next) => {
   }
 });
 
-// bKash callback — redirect target from bKash
+// bKash callback — redirect target from bKash after user completes payment
 router.get('/bkash/callback', async (req, res) => {
   const { paymentID, status, orderId } = req.query;
-  const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
+  // Use CLIENT_URL from env (must be the Vercel/frontend URL, NOT the Railway API URL)
+  const clientURL = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
 
-  if (status === 'success') {
+  if (status === 'success' && paymentID) {
     const qs = new URLSearchParams({ paymentID, method: 'bkash' });
     if (orderId) qs.set('orderId', orderId);
     return res.redirect(`${clientURL}/payment/success?${qs.toString()}`);
   }
   if (status === 'cancel') {
-    return res.redirect(`${clientURL}/payment/cancelled?method=bkash`);
+    const qs = new URLSearchParams({ method: 'bkash' });
+    if (orderId) qs.set('orderId', orderId);
+    return res.redirect(`${clientURL}/payment/cancelled?${qs.toString()}`);
   }
-  return res.redirect(`${clientURL}/payment/failed?method=bkash`);
+  const qs = new URLSearchParams({ method: 'bkash' });
+  if (orderId) qs.set('orderId', orderId);
+  return res.redirect(`${clientURL}/payment/failed?${qs.toString()}`);
 });
 
 // bKash query payment status
@@ -110,16 +115,18 @@ router.post('/nagad/create', rl, async (req, res, next) => {
 // Nagad callback redirect
 router.get('/nagad/callback', async (req, res) => {
   const { order_id, status, payment_ref_id, orderId } = req.query;
-  const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
+  const clientURL = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
   const oid = orderId || order_id;
 
-  if (status === 'Success') {
+  if (status === 'Success' && payment_ref_id) {
     const qs = new URLSearchParams({ method: 'nagad' });
     if (payment_ref_id) qs.set('ref', payment_ref_id);
     if (oid) qs.set('orderId', oid);
     return res.redirect(`${clientURL}/payment/success?${qs.toString()}`);
   }
-  return res.redirect(`${clientURL}/payment/failed?method=nagad`);
+  const qs = new URLSearchParams({ method: 'nagad' });
+  if (oid) qs.set('orderId', oid);
+  return res.redirect(`${clientURL}/payment/failed?${qs.toString()}`);
 });
 
 // Nagad verify
