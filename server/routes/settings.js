@@ -137,8 +137,6 @@ router.put('/', rl, protect, adminOnly, async (req, res, next) => {
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       return res.json({ success: true, message: 'No settings to update' });
     }
-      return res.json({ success: true, message: 'No settings to update' });
-    }
 
     const ops = Object.entries(settings).map(([key, value]) => ({
       updateOne: {
